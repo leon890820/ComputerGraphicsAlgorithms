@@ -1,0 +1,106 @@
+package org.example.engine.light;
+
+import org.example.engine.gl.Texture;
+import org.example.engine.gl.TextureCube;
+import org.example.engine.material.LightMaterial;
+import org.example.engine.math.*;
+import org.example.engine.render.RenderContext;
+import org.example.engine.render.Renderer;
+
+public class PointLight extends Light {
+
+    float radius = 10.0f;
+    float near = 0.1f;
+    float far = 1000.0f;
+    float intensity = 1.0f;
+
+    public PointLight(Vector3 pos, Vector3 c) {
+        super(pos, new Vector3(0, 0, 0), c);
+    }
+
+    public PointLight setRadius(float r) {
+        radius = r;
+        return this;
+    }
+
+    public PointLight setIntensity(float i) {
+        intensity = i;
+        return this;
+    }
+
+    public PointLight setNearFar(float n, float f) {
+        near = n;
+        far = f;
+        return this;
+    }
+
+    public float getRadius() {
+        return radius;
+    }
+
+    public float getIntensity() {
+        return intensity;
+    }
+
+    public Vector3 getPosition() {
+        return transform.position;
+    }
+
+    public Matrix4[] getShadowMatrices() {
+        Vector3 pos = transform.position;
+        Matrix4 proj = Matrix4.Perspective(90.0f, 1.0f, near, far);
+
+        Matrix4[] mats = new Matrix4[6];
+
+        mats[0] = proj.mult(Matrix4.LookAt(pos, pos.add(new Vector3( 1,  0,  0)), new Vector3(0, -1,  0)));
+        mats[1] = proj.mult(Matrix4.LookAt(pos, pos.add(new Vector3(-1,  0,  0)), new Vector3(0, -1,  0)));
+        mats[2] = proj.mult(Matrix4.LookAt(pos, pos.add(new Vector3( 0,  1,  0)), new Vector3(0,  0,  1)));
+        mats[3] = proj.mult(Matrix4.LookAt(pos, pos.add(new Vector3( 0, -1,  0)), new Vector3(0,  0, -1)));
+        mats[4] = proj.mult(Matrix4.LookAt(pos, pos.add(new Vector3( 0,  0,  1)), new Vector3(0, -1,  0)));
+        mats[5] = proj.mult(Matrix4.LookAt(pos, pos.add(new Vector3( 0,  0, -1)), new Vector3(0, -1,  0)));
+
+        return mats;
+    }
+
+    @Override
+    public Matrix4 getViewMatrix() {
+        return Matrix4.Identity();
+    }
+
+    @Override
+    public Matrix4 getProjectionMatrix() {
+        return Matrix4.Identity();
+    }
+
+    @Override
+    public void setShaderParameter(LightMaterial mat) {
+        mat.setVector3ToUniform("light_pos", transform.position);
+        mat.setVector3ToUniform("light_color", light_color);
+        //mat.setFloatToUniform("light_radius", radius);
+        //mat.setFloatToUniform("light_intensity", intensity);
+        mat.setFloatToUniform("lightFar", far);
+    }
+
+
+    public float getLightFar(){
+        return far;
+    }
+
+    @Override
+    public void renderShadow(RenderContext ctx, Renderer renderer) {
+        renderer.pointShadowPass.render(ctx);
+    }
+
+    @Override
+    public void renderLighting(RenderContext ctx, Renderer renderer) {
+        Texture[] buffer = renderer.gBufferPass.getBuffer();
+        TextureCube depth = renderer.pointShadowPass.getDepthBuffer();
+
+        renderer.pointScenePass.setGBuffer(
+                buffer[0], buffer[1], buffer[2], depth
+        );
+
+        renderer.pointScenePass.render(ctx);
+    }
+
+}
