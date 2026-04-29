@@ -56,14 +56,14 @@ public class Main {
     }
 
     private void setup() {
-        window = new Window(WIDTH, HEIGHT, "Processing Port - GBufferPass");
+        window = new Window(WIDTH, HEIGHT, "Reflective Shadow Maps");
         window.create();
 
         setupInput(window);
 
         scene = new Scene();
         main_camera = new Camera();
-        main_camera.setSize(WIDTH, HEIGHT, 0.01f, 20000.0f);
+        main_camera.setSize(WIDTH, HEIGHT, 0.01f, 10000.0f);
         main_camera.transform.setPosition(0.0f, -300f, 800.0f).setEular(-0.1f,0.0f,0.0f);
 
         PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza",null);

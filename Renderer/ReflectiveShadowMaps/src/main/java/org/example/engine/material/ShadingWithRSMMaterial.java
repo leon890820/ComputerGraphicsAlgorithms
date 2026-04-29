@@ -76,12 +76,11 @@ public class ShadingWithRSMMaterial extends Material {
         Matrix4 lightProject = lightSource.getProjectionMatrix();
         Matrix4 view = camera.getViewMatrix();
 
-        setMatrix4ToUniform("u_LightVPMatrixMulInverseCameraViewMatrix", lightProject.mult(lightView).mult(view.Inverse()));
+        setMatrix4ToUniform("u_LightVPMatrix", lightProject.mult(lightView));
         setFloatToUniform("u_MaxSampleRadius", u_MaxSampleRadius);
         setIntToUniform("u_RSMSize", 1024);
         setIntToUniform("u_VPLNum", 32);
-        setVector3ToUniform("u_LightDirInViewSpace", view.transformDirection(lightSource.getLightDir()));
-        setVector3ToUniform("u_LightPosInViewSpace", view.transformPoint(lightSource.getPosition()));
+        setVector3ToUniform("u_LightDirInWorldSpace", (lightSource.getLightDir()));
         setIntToUniform("RTX", true ? 1 : 0);
 
     }

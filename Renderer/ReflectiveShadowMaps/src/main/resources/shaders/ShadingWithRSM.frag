@@ -13,11 +13,11 @@ uniform sampler2D u_RSMNormalTexture;
 uniform sampler2D u_RSMPositionTexture;
 uniform sampler2D u_RSMDepthTexture;
 
-uniform mat4  u_LightVPMatrixMulInverseCameraViewMatrix;
+uniform mat4  u_LightVPMatrix;
 uniform float u_MaxSampleRadius;
 uniform int   u_RSMSize;
 uniform int   u_VPLNum;
-uniform vec3  u_LightDirInViewSpace;
+uniform vec3  u_LightDirInWorldSpace;
 uniform int RTX;
 
 in vec2 texCoord;
@@ -58,7 +58,7 @@ void main()
     vec3 FragViewPos    = texture(u_PositionTexture, texCoord).xyz;
 
     // view space -> light clip space
-    vec4 FragPosInLightClip = u_LightVPMatrixMulInverseCameraViewMatrix * vec4(FragViewPos, 1.0);
+    vec4 FragPosInLightClip = u_LightVPMatrix * vec4(FragViewPos, 1.0);
 
     // 透視除法，得到 NDC [-1, 1]
     vec3 FragPosInLightNDC = FragPosInLightClip.xyz / FragPosInLightClip.w;
@@ -99,12 +99,12 @@ void main()
     // Direct Illumination
     // =========================
     vec3 ambient = vec3(0.1) * FragAlbedo;
-    float NdotL = max(dot(-u_LightDirInViewSpace, FragViewNormal), 0.0);
+    float NdotL = max(dot(-u_LightDirInWorldSpace, FragViewNormal), 0.0);
     vec3 diffuse = FragAlbedo * NdotL;
 
     vec3 DirectIllumination;
     if (outsideLightFrustum)
-        DirectIllumination = ambient + diffuse * 0.7;
+        DirectIllumination = ambient;
     else
         DirectIllumination = ambient + shadow_sum * diffuse;
 
@@ -143,9 +143,6 @@ void main()
     if (RTX < 0.5)
         IndirectIllumination = vec3(0.0);
 
-    vec3 Result = DirectIllumination + (IndirectIllumination / float(u_VPLNum)) * 12.0;
-    vec3 VPLFlux                = texture(u_RSMFluxTexture, texCoord).xyz;
-    vec3 VPLNormalInViewSpace   = normalize(texture(u_RSMNormalTexture, texCoord).xyz);
-    vec3 VPLPositionInViewSpace = texture(u_RSMPositionTexture, texCoord).xyz;
+    vec3 Result = DirectIllumination + (IndirectIllumination / float(u_VPLNum)) * 20.0;
     fragColor = vec4(Result, 1.0);
 }

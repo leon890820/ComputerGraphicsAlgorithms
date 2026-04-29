@@ -6,8 +6,8 @@ precision mediump float;
 
 uniform sampler2D tex;
 
-in vec3 viewPosition;
-in vec3 viewNormal;
+in vec3 worldPosition;
+in vec3 worldNormal;
 in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
@@ -17,6 +17,6 @@ layout(location = 2) out vec4 fragPosition;
 void main() {  
     vec4 Albedo = texture(tex, texCoord);
     fragColor = Albedo;
-    fragNormal = vec4(viewNormal,1.0);
-    fragPosition = vec4(viewPosition,1.0);
+    fragNormal = vec4(worldNormal,1.0);
+    fragPosition = vec4(worldPosition,1.0);
 }

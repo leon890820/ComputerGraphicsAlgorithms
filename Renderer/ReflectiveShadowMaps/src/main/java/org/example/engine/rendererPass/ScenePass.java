@@ -13,7 +13,7 @@ public class ScenePass extends RenderPass {
     Texture depthTex;
 
     public ScenePass(){
-        lightMaterial = new LightMaterial("/shaders/spotLight.frag", "/shaders/quad.vert");
+        lightMaterial = new LightMaterial("/shaders/quad.frag", "/shaders/quad.vert");
     }
 
     public void setGBuffer(Texture albedo, Texture normal, Texture position, Texture depth) {
