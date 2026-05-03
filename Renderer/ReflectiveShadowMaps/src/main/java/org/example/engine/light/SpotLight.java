@@ -2,10 +2,6 @@ package org.example.engine.light;
 
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
-import org.example.engine.material.LightMaterial;
-import org.example.engine.render.RenderContext;
-import org.example.engine.render.Renderer;
-import org.example.engine.gl.Texture;
 
 public class SpotLight extends Light {
 
@@ -42,35 +38,8 @@ public class SpotLight extends Light {
     }
 
     @Override
-    public void setShaderParameter(LightMaterial material) {
-        Matrix4 view = getViewMatrix();
-        Matrix4 project = getProjectionMatrix();
-
-        material.setMatrix4ToUniform("lightSpaceMatrix", project.mult(view));
-        material.setVector3ToUniform("light_color", light_color);
-        material.setVector3ToUniform("light_dir", light_dir);
-        material.setVector3ToUniform("light_pos", transform.position);
-        material.setFloatToUniform("lightFar", far);
-    }
-
-    @Override
     public float getLightFar() {
         return far;
     }
 
-//    @Override
-//    public void renderShadow(RenderContext ctx, Renderer renderer) {
-//        renderer.shadowPass.render(ctx);
-//    }
-//
-//    @Override
-//    public void renderLighting(RenderContext ctx, Renderer renderer) {
-//        Texture[] buffer = renderer.gBufferPass.getBuffer();
-//        Texture depth = renderer.shadowPass.getDepthBuffer();
-//        renderer.spotScenePass.setGBuffer(
-//                buffer[0], buffer[1], buffer[2], depth
-//        );
-//
-//        renderer.spotScenePass.render(ctx);
-//    }
 }

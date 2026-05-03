@@ -8,8 +8,6 @@ import org.example.engine.math.*;
 import org.example.engine.render.*;
 import org.example.engine.scene.*;
 
-import java.io.File;
-
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
 
@@ -19,7 +17,7 @@ public class Main {
     private static final int HEIGHT = 1024;
 
     private static final float GH_MOUSE_SENSITIVITY = 0.005f;
-    private static final float GH_WALK_SPEED = 1f;
+    private static final float GH_WALK_SPEED = 3f;
     private static final float MOUSE_DEAD_ZONE = 2;
     private static final int VPL_NUM = 32;
 
@@ -38,6 +36,13 @@ public class Main {
     private Light light;
     private Renderer renderer;
     private RenderContext ctx;
+
+    Vector3 pointA = new Vector3(0, 300f, -800);
+    Vector3 pointB = new Vector3(0, 300f,  800);
+
+    Vector3 currentTarget = pointB;
+    float speed = 200.0f;
+
 
     private float a = 0;
 
@@ -60,7 +65,6 @@ public class Main {
         window.create();
 
         setupInput(window);
-
         scene = new Scene();
         main_camera = new Camera();
         main_camera.setSize(WIDTH, HEIGHT, 0.01f, 10000.0f);
@@ -71,12 +75,11 @@ public class Main {
         scene.setCamera(main_camera);
         scene.addObject(sponza);
 
-        light = new SpotLight(
-                new Vector3(125, 141, 1280),
-                new Vector3(-0.5f, -1 ,-2 ),
+        light = new PointLight(
+                new Vector3(0, -450f, -1135),
+                //new Vector3(-0.5f, -1 ,-2 ),
                 new Vector3(0.8f, 0.8f, 0.8f)
         );
-
         renderer = new Renderer(WIDTH, HEIGHT);
         ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
 
@@ -93,12 +96,42 @@ public class Main {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        updateLightMovement(light, 0.016f);
         renderer.render(ctx);
 
         window.swapBuffers();
         window.pollEvents();
     }
+    //-410,0,1280
+    //-410,0,-1200
+    //410,0,-1200
+    //410,0,1200
 
+    void updateLightMovement(Light light, float dt) {
+        Vector3 pos = light.transform.position;
+
+        Vector3 dir = currentTarget.sub(pos);
+        float dist = dir.length();
+
+        if (dist < 1.0f) {
+            // 到達後切換目標
+            if (currentTarget == pointA) {
+                currentTarget = pointB;
+            } else {
+                currentTarget = pointA;
+            }
+            return;
+        }
+
+        dir = dir.unit_vector();
+        float step = speed * dt;
+
+        if (step > dist) {
+            light.transform.position = currentTarget.copy();
+        } else {
+            light.transform.position = pos.add(dir.mult(step));
+        }
+    }
 
     private void setupInput(Window window) {
         long handle = window.getHandle();
@@ -196,10 +229,11 @@ public class Main {
         for (int i = 0; i < VPL_NUM; i++) {
             float r = (float) Math.sqrt(Math.random());
             float theta = (float) (2.0 * Math.PI * Math.random());
+            Vector3 vector = Vector3.random_unit_vector();
 
-            weight[i * 4 + 0] = r * (float) Math.cos(theta);
-            weight[i * 4 + 1] = r * (float) Math.sin(theta);
-            weight[i * 4 + 2] = r * r;   // weight
+            weight[i * 4 + 0] = vector.x;
+            weight[i * 4 + 1] = vector.y;
+            weight[i * 4 + 2] = vector.z;   // weight
             weight[i * 4 + 3] = 0.0f;
         }
 

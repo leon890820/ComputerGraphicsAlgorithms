@@ -81,6 +81,9 @@ public class ShadingWithRSMMaterial extends Material {
         setIntToUniform("u_RSMSize", 1024);
         setIntToUniform("u_VPLNum", 32);
         setVector3ToUniform("u_LightDirInWorldSpace", (lightSource.getLightDir()));
+        setVector3ToUniform("u_LightPosInWorldSpace", (lightSource.getPosition()));
+        setFloatToUniform("lightFar", lightSource.getLightFar());
+
         setIntToUniform("RTX", true ? 1 : 0);
 
     }

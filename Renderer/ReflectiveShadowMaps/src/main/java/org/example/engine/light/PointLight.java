@@ -1,17 +1,11 @@
 package org.example.engine.light;
-
-import org.example.engine.gl.Texture;
-import org.example.engine.gl.TextureCube;
-import org.example.engine.material.LightMaterial;
 import org.example.engine.math.*;
-import org.example.engine.render.RenderContext;
-import org.example.engine.render.Renderer;
 
 public class PointLight extends Light {
 
     float radius = 10.0f;
     float near = 0.1f;
-    float far = 1000.0f;
+    float far = 10000.0f;
     float intensity = 1.0f;
 
     public PointLight(Vector3 pos, Vector3 c) {
@@ -72,35 +66,10 @@ public class PointLight extends Light {
         return Matrix4.Identity();
     }
 
-    @Override
-    public void setShaderParameter(LightMaterial mat) {
-        mat.setVector3ToUniform("light_pos", transform.position);
-        mat.setVector3ToUniform("light_color", light_color);
-        //mat.setFloatToUniform("light_radius", radius);
-        //mat.setFloatToUniform("light_intensity", intensity);
-        mat.setFloatToUniform("lightFar", far);
-    }
-
 
     public float getLightFar(){
         return far;
     }
 
-//    @Override
-//    public void renderShadow(RenderContext ctx, Renderer renderer) {
-//        renderer.pointShadowPass.render(ctx);
-//    }
-//
-//    @Override
-//    public void renderLighting(RenderContext ctx, Renderer renderer) {
-//        Texture[] buffer = renderer.gBufferPass.getBuffer();
-//        TextureCube depth = renderer.pointShadowPass.getDepthBuffer();
-//
-//        renderer.pointScenePass.setGBuffer(
-//                buffer[0], buffer[1], buffer[2], depth
-//        );
-//
-//        renderer.pointScenePass.render(ctx);
-//    }
 
 }

@@ -2,10 +2,7 @@ package org.example.engine.light;
 
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
-import org.example.engine.render.RenderContext;
-import org.example.engine.render.Renderer;
 import org.example.engine.gameobject.GameObject;
-import org.example.engine.material.LightMaterial;
 
 public abstract class Light extends GameObject {
 
@@ -93,13 +90,7 @@ public abstract class Light extends GameObject {
     // ===== 抽象（維持原接口）=====
     public abstract Matrix4 getProjectionMatrix();
 
-    public abstract void setShaderParameter(LightMaterial material);
-
     public abstract float getLightFar();
-
-    //public abstract void renderShadow(RenderContext ctx, Renderer renderer);
-
-    //public abstract void renderLighting(RenderContext ctx, Renderer renderer);
 
     // ===== Getter =====
     public float getIntensity() {
@@ -122,7 +113,4 @@ public abstract class Light extends GameObject {
         return near;
     }
 
-    public float getFar() {
-        return far;
-    }
 }

@@ -1,8 +1,6 @@
 #version 330
 
 uniform mat4 modelMatrix;
-uniform mat4 viewMatrix;
-
 uniform mat4 lightVPMatrix;
 
 layout(location = 0) in vec3 aVertexPosition;
