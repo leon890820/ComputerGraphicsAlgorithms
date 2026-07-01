@@ -15,8 +15,6 @@ in vec3 worldVertex;
 in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
-layout(location = 1) out vec4 fragNormal;
-layout(location = 2) out vec4 fragWorldPos;
 
 
 void main() {  
@@ -34,6 +32,4 @@ void main() {
     vec3 color = ambient + (diffuse + specular);
 
     fragColor = vec4(color, 1.0);
-    fragNormal = vec4(worldNormal, 1.0);
-    fragWorldPos = vec4(worldVertex, 1.0);
 }

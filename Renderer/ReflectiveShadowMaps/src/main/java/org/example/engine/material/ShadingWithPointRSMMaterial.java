@@ -1,5 +1,6 @@
 package org.example.engine.material;
 
+import org.example.Main;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.*;
 import org.example.engine.mesh.SubMesh;
@@ -75,7 +76,7 @@ public class ShadingWithPointRSMMaterial extends Material {
         setVector3ToUniform("u_LightPosInWorldSpace", (lightSource.getPosition()));
         setFloatToUniform("lightFar", lightSource.getLightFar());
 
-        setIntToUniform("RTX", true ? 1 : 0);
+        setIntToUniform("RTX", Main.RTX ? 1 : 0);
 
     }
 

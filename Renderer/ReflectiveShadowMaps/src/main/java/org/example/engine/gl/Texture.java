@@ -11,13 +11,14 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class Texture {
 
-    IntBuffer tex;
+    private IntBuffer tex;
 
-    int width = 0;
-    int height = 0;
-    boolean uploaded = false;
+    private int width = 0;
+    private int height = 0;
 
-    boolean flipYOnUpload = true;
+    private boolean uploaded = false;
+    private boolean flipYOnUpload = true;
+    private boolean useMipmap = false;
 
     public Texture() {
         tex = MemoryUtil.memAllocInt(1);
@@ -25,29 +26,44 @@ public class Texture {
     }
 
     public Texture(int w, int h) {
+        this(w, h, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_LINEAR, false);
+    }
+
+    public Texture(int w, int h, boolean useMipmap) {
+        this(w, h, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_LINEAR, useMipmap);
+    }
+
+    public Texture(
+            int w,
+            int h,
+            int internalFormat,
+            int format,
+            int type,
+            int filter,
+            boolean useMipmap
+    ) {
         this();
 
-        width = w;
-        height = h;
+        this.width = w;
+        this.height = h;
+        this.useMipmap = useMipmap;
 
         glBindTexture(GL_TEXTURE_2D, tex.get(0));
 
         glTexImage2D(
                 GL_TEXTURE_2D,
                 0,
-                GL_RGBA32F,
+                internalFormat,
                 w,
                 h,
                 0,
-                GL_RGBA,
-                GL_FLOAT,
+                format,
+                type,
                 0
         );
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        applySampling(filter);
+        applyWrap(GL_CLAMP_TO_EDGE);
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -55,18 +71,38 @@ public class Texture {
     }
 
     public Texture(String path) {
-        this();
-        setTexture(path);
+        this(path, true, true);
     }
 
-    public Texture(String path, boolean flipY) {
+    public Texture(String path, boolean useMipmap) {
+        this(path, true, useMipmap);
+    }
+
+    public Texture(String path, boolean flipY, boolean useMipmap) {
         this();
+
         this.flipYOnUpload = flipY;
+        this.useMipmap = useMipmap;
+
         setTexture(path);
     }
 
     public Texture setFlipYOnUpload(boolean flipY) {
         this.flipYOnUpload = flipY;
+        return this;
+    }
+
+    public Texture setUseMipmap(boolean enable) {
+        this.useMipmap = enable;
+
+        if (!uploaded || tex == null) {
+            return this;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, tex.get(0));
+        applySampling(GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         return this;
     }
 
@@ -82,20 +118,17 @@ public class Texture {
 
             byte[] bytes;
 
-            // ===== 先走 resource =====
             if (input != null) {
                 try (InputStream in = input) {
                     bytes = in.readAllBytes();
                 }
-            }
-            // ===== fallback：走檔案系統 =====
-            else {
+            } else {
                 java.io.File file = new java.io.File(path);
 
                 System.out.println("[Texture] Resource not found, try file:");
-                System.out.println("Absolute = " + file.getAbsolutePath());
+                System.out.println("Absolute  = " + file.getAbsolutePath());
                 System.out.println("Canonical = " + file.getCanonicalPath());
-                System.out.println("Exists = " + file.exists());
+                System.out.println("Exists    = " + file.exists());
 
                 if (!file.exists()) {
                     System.out.println("[Texture] Failed to load image: " + path);
@@ -125,9 +158,11 @@ public class Texture {
 
             if (image == null) {
                 System.out.println("[Texture] STB failed: " + STBImage.stbi_failure_reason());
+
                 MemoryUtil.memFree(w);
                 MemoryUtil.memFree(h);
                 MemoryUtil.memFree(channels);
+
                 return this;
             }
 
@@ -149,10 +184,6 @@ public class Texture {
         }
     }
 
-    /**
-     * 純 Java 版沒有 PImage，所以這個接口先不保留 PImage 參數。
-     * 如果之後你真的要從 byte[] 或 BufferedImage 建 texture，可以再補 overload。
-     */
     private void uploadImageToGPU(ByteBuffer image, int w, int h) {
         if (image == null) {
             System.out.println("[Texture] upload failed: image is null");
@@ -173,18 +204,34 @@ public class Texture {
                 image
         );
 
-        // 不產生 mipmap
-        // glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        applySampling(GL_LINEAR);
+        applyWrap(GL_REPEAT);
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
         uploaded = true;
+    }
+
+    private void applySampling(int filter) {
+        if (useMipmap) {
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+            if (filter == GL_NEAREST) {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            } else {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            }
+        } else {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+        }
+    }
+
+    private void applyWrap(int mode) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mode);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mode);
     }
 
     public Texture bind(int unit) {
@@ -192,12 +239,14 @@ public class Texture {
 
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, tex.get(0));
+
         return this;
     }
 
     public Texture unbind(int unit) {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, 0);
+
         return this;
     }
 
@@ -205,19 +254,17 @@ public class Texture {
         if (tex == null) return this;
 
         glBindTexture(GL_TEXTURE_2D, tex.get(0));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mode);
+        applyWrap(mode);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         return this;
     }
 
-    public Texture setSamplingMode(int mode) {
+    public Texture setSamplingMode(int filter) {
         if (tex == null) return this;
 
         glBindTexture(GL_TEXTURE_2D, tex.get(0));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mode);
+        applySampling(filter);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         return this;
@@ -228,8 +275,16 @@ public class Texture {
         return tex.get(0);
     }
 
+    public int getId() {
+        return getID();
+    }
+
     public boolean isUploaded() {
         return uploaded;
+    }
+
+    public boolean isUseMipmap() {
+        return useMipmap;
     }
 
     public int getWidth() {

@@ -50,7 +50,7 @@ layout(std430, binding = 0) buffer VPLsSampleCoordsAndWeights {
 float calcShadow(vec3 worldPos){
     float sum = 0.0;
 
-    for (int i = 0; i < u_VPLNum; i++){
+    for (int i = 0; i < VPL_NUM; i++){
         vec3 sampleData = u_VPLsSampleCoordsAndWeights[i].xyz;
         vec3 fragToLight = worldPos - u_LightPosInWorldSpace;
         float ligthDst = length(fragToLight) / lightFar;
@@ -60,7 +60,7 @@ float calcShadow(vec3 worldPos){
         float bias = 0.01;
         sum += abs(closestDepth - ligthDst) > bias ? 0.0 : 1.0;
     }
-    return sum / 32.0;
+    return sum / VPL_NUM;
 }
 
 
@@ -76,10 +76,10 @@ vec3 calcVPLIrradiance(vec3 vplFlux, vec3 vplNormal, vec3 vplPos, vec3 fragPos, 
 vec3 calcIndirectIllumination(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo){
     vec3 indirect = vec3(0.0);
 
-    for (int i = 0; i < u_VPLNum; i++){
+    for (int i = 0; i < VPL_NUM; i++){
         vec3 sampleData = u_VPLsSampleCoordsAndWeights[i].xyz;
         vec3 dir = normalize(fragPos - u_LightPosInWorldSpace);
-        vec3 bias_dir = dir + sampleData * 0.1f;
+        vec3 bias_dir = dir + sampleData * 0.3f;
 
         vec3 vplFlux   = texture(u_RSMFluxTexture, bias_dir).xyz;
         vec3 vplNormal = normalize(texture(u_RSMNormalTexture, bias_dir).xyz);
@@ -89,8 +89,8 @@ vec3 calcIndirectIllumination(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo){
     }
 
     indirect *= fragAlbedo;
-    indirect /= float(u_VPLNum);
-    indirect *= 10.0;
+    indirect /= float(VPL_NUM);
+    indirect *= 2.0;
 
     return indirect;
 }
@@ -111,10 +111,10 @@ void main()
     vec3 ambient = fragAlbedo * 0.1;
     vec3 lightDir = normalize(fragPos - u_LightPosInWorldSpace);
     float NdotL = max(dot(fragNormal, -lightDir), 0.0);
-    vec3 diffuse = fragAlbedo * NdotL;
+    vec3 diffuse = fragAlbedo * NdotL * 0.9f;
 
     float shadow = calcShadow(fragPos);
-    vec3 directIllumination = ambient;
+    vec3 directIllumination = ambient * shadow;
     directIllumination += diffuse * shadow;
 
     // =========================

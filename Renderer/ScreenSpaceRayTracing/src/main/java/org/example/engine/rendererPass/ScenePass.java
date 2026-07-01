@@ -1,34 +1,26 @@
 package org.example.engine.rendererPass;
 import org.example.engine.gl.Texture;
-import org.example.engine.material.LightMaterial;
+import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;
 import org.example.engine.scene.Camera;
 
 abstract public class ScenePass extends RenderPass {
-    LightMaterial lightMaterial;
+    SceneMaterial sceneMaterial;
     Texture albedoTex;
-    Texture normalTex;
-    Texture positionTex;
-    Texture depthTex;
 
     public ScenePass(){
-        lightMaterial = new LightMaterial("/shaders/quad.frag", "/shaders/quad.vert");
+        sceneMaterial = new SceneMaterial("/shaders/quad.frag", "/shaders/quad.vert");
     }
 
-    public void setGBuffer(Texture albedo, Texture normal, Texture position, Texture depth) {
+    public void setGBuffer(Texture albedo) {
         albedoTex = albedo;
-        normalTex = normal;
-        positionTex = position;
-        depthTex = depth;
     }
 
 
     @Override
     public void render(RenderContext ctx) {
-        var light = ctx.scene.getLights();
-        lightMaterial.setAlbedoTex(albedoTex).setNormalTex(normalTex).setPositionTex(positionTex).setDepthTex(depthTex);
-        lightMaterial.setLight(light.get(0));
+        sceneMaterial.setAlbedoTex(albedoTex);
         Camera camera = ctx.scene.getCamera();
-        camera.runWithMaterial(lightMaterial);
+        camera.runWithMaterial(sceneMaterial);
     }
 }

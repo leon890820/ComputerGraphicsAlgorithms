@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.engine.core.Window;
+import org.example.engine.gameobject.GameObject;
 import org.example.engine.gameobject.PhongObject;
 import org.example.engine.gl.SSBO;
 import org.example.engine.light.*;
@@ -12,7 +13,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
 
 public class Main {
-
+    public static boolean RTX = true;
     private static final int WIDTH = 1024;
     private static final int HEIGHT = 1024;
 
@@ -37,12 +38,12 @@ public class Main {
     private Renderer renderer;
     private RenderContext ctx;
 
-    Vector3 pointA = new Vector3(0, 300f, -800);
-    Vector3 pointB = new Vector3(0, 300f,  800);
+    Vector3 pointA = new Vector3(0, -660f, -800);
+    Vector3 pointB = new Vector3(0, -660f,  800);
 
     Vector3 currentTarget = pointB;
     float speed = 200.0f;
-
+    PhongObject furina;
 
     private float a = 0;
 
@@ -67,16 +68,21 @@ public class Main {
         setupInput(window);
         scene = new Scene();
         main_camera = new Camera();
-        main_camera.setSize(WIDTH, HEIGHT, 0.01f, 10000.0f);
+        main_camera.setSize(WIDTH, HEIGHT, 0.1f, 10000.0f);
         main_camera.transform.setPosition(0.0f, -300f, 800.0f).setEular(-0.1f,0.0f,0.0f);
 
         PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza",null);
+        furina = new PhongObject("../../Model/Furina/Furina",null);
+        furina.setScale(100,100,100).setPosition(0,-660,100);
+
         sponza.setScene(scene);
+        furina.setScene(scene);
         scene.setCamera(main_camera);
         scene.addObject(sponza);
+        scene.addObject(furina);
 
         light = new PointLight(
-                new Vector3(0, -450f, -1135),
+                new Vector3(0, 0, 0),
                 //new Vector3(-0.5f, -1 ,-2 ),
                 new Vector3(0.8f, 0.8f, 0.8f)
         );
@@ -95,8 +101,9 @@ public class Main {
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        updateFurinaMovement(furina, 0.016f);
 
-        updateLightMovement(light, 0.016f);
+        //updateLightMovement(light, 0.016f);
         renderer.render(ctx);
 
         window.swapBuffers();
@@ -106,6 +113,35 @@ public class Main {
     //-410,0,-1200
     //410,0,-1200
     //410,0,1200
+
+    void updateFurinaMovement(GameObject furina,float dt){
+        Vector3 pos = furina.transform.position;
+
+        Vector3 dir = currentTarget.sub(pos);
+        float dist = dir.length();
+
+        if (dist < 1.0f) {
+            // 到達後切換目標
+            if (currentTarget == pointA) {
+                currentTarget = pointB;
+            } else {
+                currentTarget = pointA;
+            }
+            return;
+        }
+
+        dir = dir.unit_vector();
+        float step = speed * dt;
+
+        if (step > dist) {
+            furina.setPosition(currentTarget.copy());
+        } else {
+            furina.setPosition(pos.add(dir.mult(step)));
+        }
+
+        furina.setEular(0,a,0);
+        a += 0.02f;
+    }
 
     void updateLightMovement(Light light, float dt) {
         Vector3 pos = light.transform.position;
@@ -154,6 +190,10 @@ public class Main {
             if (key == GLFW_KEY_D) {
                 key_input[3] = pressed;
             }
+            if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+                RTX = !RTX;
+            }
+
 
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
                 glfwSetWindowShouldClose(handle, true);

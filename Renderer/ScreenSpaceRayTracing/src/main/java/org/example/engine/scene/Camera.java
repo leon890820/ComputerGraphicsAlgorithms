@@ -29,7 +29,7 @@ public class Camera extends Quad {
         wid = 256.0f;
         hei = 256.0f;
         near = 0.1f;
-        far = 10000.0f;
+        far = 1000.0f;
 
         worldView.makeIdentity();
         projection.makeIdentity();
@@ -214,5 +214,9 @@ public class Camera extends Quad {
         projection.set(2, 3, c.w - projection.get(3, 3));
 
         vpDirty = true;
+    }
+
+    public float getFar(){
+        return far;
     }
 }

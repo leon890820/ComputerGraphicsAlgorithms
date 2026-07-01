@@ -14,14 +14,16 @@ public class Renderer {
         gBufferPass = new GBufferPass();
         ssrPass = new SSRPass();
         scenePass = new SpotScenePass();
-        var buffer = gBufferPass.getBuffer();
-        scenePass.setGBuffer(buffer[0], buffer[1], buffer[2], null);
+        var gbuffer = gBufferPass.getBuffer();
+        var ssrbuffer = ssrPass.getBuffer();
+        ssrPass.setAlbedo(gbuffer[0]).setNormal(gbuffer[1]).setWorldPos(gbuffer[2]).setDepth(gbuffer[3]);
+        scenePass.setGBuffer(ssrbuffer[0]);
     }
 
     public void render(RenderContext ctx) {
         this.ctx = ctx;
         gBufferPass.render(ctx);
-        //ssrPass.render(ctx);
+        ssrPass.render(ctx);
         scenePass.render(ctx);
     }
 

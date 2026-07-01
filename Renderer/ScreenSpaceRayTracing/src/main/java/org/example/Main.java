@@ -1,9 +1,8 @@
 package org.example;
 
 import org.example.engine.core.Window;
-import org.example.engine.gameobject.PhongObject;
-import org.example.engine.gl.Texture;
-import org.example.engine.material.PhongMaterial;
+import org.example.engine.gameobject.*;
+import org.example.engine.material.*;
 import org.example.engine.light.*;
 import org.example.engine.math.*;
 import org.example.engine.render.*;
@@ -77,13 +76,15 @@ public class Main {
 
         PhongMaterial phongMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+        SSRMaterial ssrMaterial =
+                new SSRMaterial("/shaders/ScreenSpaceRayTracing.frag", "/shaders/ScreenSpaceRayTracing.vert");
 
         PhongObject phongObject =
                 new PhongObject("/meshes/Furina/Furina", phongMaterial);
 
 
-        PhongObject floor = new PhongObject("/meshes/Floor/quad", phongMaterial);
-        floor.setEular(3.1415926f / 2, 0, 0)
+        PhongObject floor = new PhongObject("/meshes/Floor/quad", ssrMaterial);
+        floor.setEular(-3.1415926f / 2, 0, 0)
                 .setScale(5, 5, 5)
                 .setPosition(0, 0, 0);
 

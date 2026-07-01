@@ -4,7 +4,7 @@ import org.example.engine.math.*;
 public class PointLight extends Light {
 
     float radius = 10.0f;
-    float near = 0.1f;
+    float near = 1f;
     float far = 10000.0f;
     float intensity = 1.0f;
 

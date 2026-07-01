@@ -3,8 +3,7 @@ package org.example.engine.rendererPass;
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
 import org.example.engine.gameobject.GameObject;
-import org.example.engine.material.Material;
-import org.example.engine.material.PhongMaterial;
+import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;
 
 import static org.lwjgl.opengl.GL33.*;
@@ -12,16 +11,19 @@ import static org.lwjgl.opengl.GL33.*;
 public class GBufferPass extends RenderPass {
 
     FBO GBuffer;
-    PhongMaterial phongMaterial;
+    GBufferMaterial gBufferMaterial;
 
 
     public GBufferPass() {
-        GBuffer = new FBO(1024, 1024, 3, GL_LINEAR, true);
-        phongMaterial = new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+        GBuffer = new FBO(1024, 1024, 4, GL_LINEAR, true);
+        gBufferMaterial = new GBufferMaterial("/shaders/GBuffer.frag", "/shaders/GBuffer.vert");
     }
 
     public Texture[] getBuffer() {
         return GBuffer.tex;
+    }
+    public Texture getDepth() {
+        return GBuffer.depthTex;
     }
 
     @Override
@@ -33,8 +35,8 @@ public class GBufferPass extends RenderPass {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         var light = ctx.scene.getLights();
         for (GameObject go : ctx.scene.getObjects()) {
-            phongMaterial.setLight(light.get(0));
-            go.runWithMaterial(phongMaterial);
+            gBufferMaterial.setLight(light.get(0));
+            go.runWithMaterial(gBufferMaterial);
         }
         GBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }
