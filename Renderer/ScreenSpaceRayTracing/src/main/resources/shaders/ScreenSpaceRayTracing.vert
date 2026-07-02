@@ -1,7 +1,8 @@
 #version 330
 
-uniform mat4 VP;
 uniform mat4 modelMatrix;
+uniform mat4 u_ViewMatrix;
+uniform mat4 u_ProjectionMatrix;
 
 layout(location = 0) in vec3 aVertexPosition;
 layout(location = 1) in vec3 aNormalPosition;
@@ -12,5 +13,5 @@ out vec3 worldVertex;
 void main() {
     vec4 worldPos = modelMatrix * vec4(aVertexPosition, 1.0);
     worldVertex = worldPos.xyz;
-    gl_Position = VP * vec4(worldPos.xyz, 1.0);
+    gl_Position = u_ProjectionMatrix * u_ViewMatrix * worldPos;
 }

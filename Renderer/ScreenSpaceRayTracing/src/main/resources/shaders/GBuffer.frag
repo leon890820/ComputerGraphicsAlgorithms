@@ -8,6 +8,8 @@ uniform vec3 cameraPos;
 uniform float cameraFar;
 uniform sampler2D tex;
 
+uniform mat4 u_ViewMatrix;
+
 in vec3 worldNormal;
 in vec3 worldVertex;
 in vec2 texCoord;
@@ -47,7 +49,6 @@ void main()
     fragWorldPos = vec4(worldVertex, 1.0);
 
     // Distance to Camera
-    float lightDistance = length(worldVertex - cameraPos);
-    lightDistance /= cameraFar;
-    worldDepth = vec4(vec3(lightDistance), 1.0);
+    vec3 viewPos = (u_ViewMatrix * vec4(worldVertex, 1.0)).xyz;
+    worldDepth = vec4(vec3(viewPos.z), 1.0);
 }

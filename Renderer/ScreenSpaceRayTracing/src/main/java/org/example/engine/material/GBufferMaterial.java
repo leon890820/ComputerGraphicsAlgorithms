@@ -29,13 +29,17 @@ public class GBufferMaterial extends Material {
         Matrix4 model = go.localToWorld();
         Matrix4 mvp = go.MVP();
         var camera = go.scene.getCamera();
+        Matrix4 V = camera.getViewMatrix();
 
         setMatrix4ToUniform("MVP", mvp);
         setMatrix4ToUniform("modelMatrix", model);
+        setMatrix4ToUniform("u_ViewMatrix", V);
 
         setVector3ToUniform("ambient_light", new Vector3(0.5f,0.5f,0.5f));
         setVector3ToUniform("cameraPos", camera.transform.position);
         setFloatToUniform("cameraFar", camera.getFar());
+
+
         Texture useTex = texture;
 
         if (useTex == null && subMesh != null) {

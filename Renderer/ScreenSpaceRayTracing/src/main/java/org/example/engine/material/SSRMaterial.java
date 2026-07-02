@@ -42,11 +42,12 @@ public class SSRMaterial extends Material{
     public void run(GameObject go, SubMesh subMesh) {
         Matrix4 model = go.localToWorld();
         var camera = go.scene.getCamera();
-        Matrix4 vp = camera.Matrix();
+        Matrix4 V = camera.getViewMatrix();
+        Matrix4 P = camera.getProjectionMatrix();
 
-
-        setMatrix4ToUniform("VP", vp);
         setMatrix4ToUniform("modelMatrix", model);
+        setMatrix4ToUniform("u_ViewMatrix", V);
+        setMatrix4ToUniform("u_ProjectionMatrix", P);
 
         setTexture("albedoTex", albedoTex, 0);
         setTexture("normalTex", normalTex, 1);
@@ -55,5 +56,7 @@ public class SSRMaterial extends Material{
 
         setVector3ToUniform("cameraPos", camera.transform.position);
         setFloatToUniform("cameraFar", camera.getFar());
+        setFloatToUniform("u_WindowWidth", 1024);
+        setFloatToUniform("u_WindowHeight", 1024);
     }
 }
