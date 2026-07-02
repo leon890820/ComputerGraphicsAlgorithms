@@ -20,14 +20,13 @@ in vec3 worldVertex;
 
 layout(location = 0) out vec4 fragColor;
 
-struct Ray
-{
+struct Ray{
     vec3 Origin;
     vec3 Direction;
+    vec3 SurfaceNormal;
 };
 
-struct Result
-{
+struct Result{
     bool IsHit;
     vec2 UV;
     vec3 Position;
@@ -36,13 +35,11 @@ struct Result
     bool outTest;
 };
 
-vec4 projectToScreenSpace(vec3 vPoint)
-{
+vec4 projectToScreenSpace(vec3 vPoint){
     return u_ProjectionMatrix * vec4(vPoint,1);
 }
 
-vec3 projectToViewSpace(vec3 vPointInViewSpace)
-{
+vec3 projectToViewSpace(vec3 vPointInViewSpace){
     return vec3(u_ViewMatrix * vec4(vPointInViewSpace,1));
 }
 
@@ -54,17 +51,30 @@ vec3 worldSpaceToScreenSpace(vec3 worldPos){
     return screenPos;
 }
 
-float distanceSquared(vec2 A, vec2 B)
-{
+float distanceSquared(vec2 A, vec2 B){
     A -= B;
     return dot(A, A);
 }
-bool Query(vec2 z, vec2 uv)
-{
-    float depths = texture(depthTex, uv / vec2(u_WindowWidth,u_WindowHeight)).r;
-    if (depths >= -0.0001)
+
+bool Query(vec2 rayZRange, vec2 uv, vec3 surfaceNormal){
+    vec2 size = vec2(u_WindowWidth, u_WindowHeight);
+    vec2 texelUV = (floor(uv) + vec2(0.5)) / size;
+    float sceneViewZ = texture(depthTex, texelUV).r;
+
+    // GBuffer background is cleared to 0; visible geometry in view space has negative z.
+    if (sceneViewZ >= -0.0001)
         return false;
-    return z.y < depths && z.x > depths;
+
+    vec3 sceneNormal = normalize(texture(normalTex, texelUV).rgb);
+    float rayNearZ = rayZRange.x;
+    float rayFarZ = rayZRange.y;
+    float thickness = 0.06;
+
+    bool sameSurface = dot(sceneNormal, surfaceNormal) > 0.98 && abs(sceneViewZ - rayNearZ) < thickness * 2.0;
+    if (sameSurface)
+        return false;
+
+    return sceneViewZ < rayNearZ + thickness && sceneViewZ > rayFarZ - thickness;
 }
 
 
@@ -75,6 +85,11 @@ bool IsOutSideScreen(vec3 pos){
 
 Result RayMarching(Ray vRay){
     Result result;
+    result.IsHit = false;
+    result.UV = vec2(0.0);
+    result.Position = vec3(0.0);
+    result.IterationCount = 0;
+    result.outTest = false;
 
     vec3 Begin = vRay.Origin;
     vec3 End = vRay.Origin + vRay.Direction * u_RayLength;
@@ -138,7 +153,7 @@ Result RayMarching(Ray vRay){
         if(result.UV.x > u_WindowWidth || result.UV.x < 0 || result.UV.y > u_WindowHeight || result.UV.y < 0){
             break;
         }
-        result.IsHit = Query(Depths, result.UV);
+        result.IsHit = Query(Depths, result.UV, vRay.SurfaceNormal);
         if (result.IsHit){
             break;
         }
@@ -158,6 +173,7 @@ void main() {
     Ray ray;
     ray.Origin = worldVertex;
     ray.Direction = dir;
+    ray.SurfaceNormal = normal;
 
     Result result = RayMarching(ray);
 

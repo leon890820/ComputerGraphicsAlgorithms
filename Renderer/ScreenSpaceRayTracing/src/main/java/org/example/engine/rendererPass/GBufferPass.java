@@ -15,7 +15,7 @@ public class GBufferPass extends RenderPass {
 
 
     public GBufferPass() {
-        GBuffer = new FBO(1024, 1024, 4, GL_LINEAR, true);
+        GBuffer = new FBO(1024, 1024, 4, GL_NEAREST, true);
         gBufferMaterial = new GBufferMaterial("/shaders/GBuffer.frag", "/shaders/GBuffer.vert");
     }
 
@@ -35,7 +35,7 @@ public class GBufferPass extends RenderPass {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         var light = ctx.scene.getLights();
         for (GameObject go : ctx.scene.getObjects()) {
-            gBufferMaterial.setLight(light.getFirst());
+            gBufferMaterial.setLight(light.get(0));
             go.runWithMaterial(gBufferMaterial);
         }
         GBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
