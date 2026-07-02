@@ -17,16 +17,37 @@ layout(location = 1) out vec4 fragNormal;
 layout(location = 2) out vec4 fragWorldPos;
 layout(location = 3) out vec4 worldDepth;
 
-void main() {  
-    vec3 texture_color = texture(tex, texCoord).rgb;
-    vec3 ambient = texture_color * ambient_light;
-    vec3 color = ambient;
+void main()
+{
+    float gamma = 2.2;
 
-    fragColor = vec4(color, 1.0);
-    fragNormal = vec4(worldNormal, 1.0);
+    // 讀取 Diffuse
+    vec4 texColor = texture(tex, texCoord);
+
+    // Alpha Cutout
+    if (texColor.a != 1.0)
+    discard;
+
+    // sRGB -> Linear
+    vec3 diffuseColor = pow(texColor.rgb, vec3(gamma));
+
+    // Exponential Tone Mapping
+    vec3 mapped = vec3(1.0) - exp(-diffuseColor);
+
+    // Linear -> sRGB
+    mapped = pow(mapped, vec3(1.0 / gamma));
+
+    // Ambient
+    fragColor = vec4(mapped * ambient_light, 1.0);
+
+    // World Normal
+    fragNormal = vec4(normalize(worldNormal), 1.0);
+
+    // World Position
     fragWorldPos = vec4(worldVertex, 1.0);
 
+    // Distance to Camera
     float lightDistance = length(worldVertex - cameraPos);
-    lightDistance = lightDistance / cameraFar;
+    lightDistance /= cameraFar;
     worldDepth = vec4(vec3(lightDistance), 1.0);
 }

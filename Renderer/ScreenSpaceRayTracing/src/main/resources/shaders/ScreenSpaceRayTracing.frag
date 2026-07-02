@@ -36,21 +36,21 @@ void main() {
     vec3 screenPos = worldSpaceToScreenSpace(worldVertex);
     vec3 albedo = texture(albedoTex, screenPos.xy).rgb;
     vec3 normal = normalize(texture(normalTex, screenPos.xy).rgb);
-    vec3 worldPos = texture(worldPosTex, screenPos.xy).rgb;
     vec3 depth = texture(depthTex, screenPos.xy).rgb * cameraFar;
 
-    vec3 camPosToWorldPos = normalize(cameraPos - worldPos);
-    vec3 dir = Reflect(-camPosToWorldPos, normal);
-    float stepSize = 0.1;
+    vec3 camPosToWorldPos = normalize(cameraPos - worldVertex);
+    vec3 dir = normalize(reflect(-camPosToWorldPos, normal));
+    float stepSize = 0.01;
+    float thickness = 0.1;
 
-    for(float step = 1 ; step< 100 ; step++){
-        vec3 pos = worldVertex + dir *  step;
+    for(float step = 1 ; step< 10000 ; step++){
+        vec3 pos = worldVertex + dir *  step * stepSize;
         vec3 screenStepPos = worldSpaceToScreenSpace(pos);
-        if(IsOutSideScreen(screenPos)) break;
+        if(IsOutSideScreen(screenStepPos)) break;
         float depth = texture(depthTex, screenStepPos.xy).r * cameraFar;
         if(depth <= 0) break;
         float reelDepth = length(cameraPos - pos);
-        if(reelDepth - depth > 0.1){
+        if(reelDepth > depth && reelDepth - depth < thickness){ 
             vec3 albedo = texture(albedoTex, screenStepPos.xy).rgb;
             fragColor = vec4(albedo, 1.0);
             return;

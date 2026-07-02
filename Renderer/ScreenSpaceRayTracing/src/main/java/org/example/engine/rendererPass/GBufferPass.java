@@ -35,7 +35,7 @@ public class GBufferPass extends RenderPass {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         var light = ctx.scene.getLights();
         for (GameObject go : ctx.scene.getObjects()) {
-            gBufferMaterial.setLight(light.get(0));
+            gBufferMaterial.setLight(light.getFirst());
             go.runWithMaterial(gBufferMaterial);
         }
         GBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
