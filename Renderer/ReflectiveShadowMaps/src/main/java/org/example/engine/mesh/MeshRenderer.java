@@ -2,6 +2,7 @@ package org.example.engine.mesh;
 
 import org.example.engine.material.Material;
 import org.example.engine.gameobject.GameObject;
+import org.example.engine.render.RenderContext;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -156,7 +157,15 @@ public class MeshRenderer {
         render(go, defaultMaterial);
     }
 
+    public void render(RenderContext ctx, GameObject go) {
+        render(ctx, go, defaultMaterial);
+    }
+
     public void render(GameObject go, Material overrideMaterial) {
+        render(null, go, overrideMaterial);
+    }
+
+    public void render(RenderContext ctx, GameObject go, Material overrideMaterial) {
         if (!initialized || vao == null) return;
         if (go == null) return;
 
@@ -164,7 +173,7 @@ public class MeshRenderer {
         if (useMat == null) return;
 
         useMat.bind();
-        useMat.run(go, subMesh);
+        useMat.run(ctx, go, subMesh);
 
         glBindVertexArray(vao.get(0));
         glDrawArrays(GL_TRIANGLES, 0, count);
@@ -178,7 +187,15 @@ public class MeshRenderer {
         debugRender(go, defaultMaterial);
     }
 
+    public void debugRender(RenderContext ctx, GameObject go) {
+        debugRender(ctx, go, defaultMaterial);
+    }
+
     public void debugRender(GameObject go, Material overrideMaterial) {
+        debugRender(null, go, overrideMaterial);
+    }
+
+    public void debugRender(RenderContext ctx, GameObject go, Material overrideMaterial) {
         if (!initialized || vao == null) return;
         if (go == null) return;
 
@@ -186,7 +203,7 @@ public class MeshRenderer {
         if (useMat == null) return;
 
         useMat.bind();
-        useMat.run(go, subMesh);
+        useMat.run(ctx, go, subMesh);
 
         glBindVertexArray(vao.get(0));
         glDrawArrays(GL_LINES, 0, count);

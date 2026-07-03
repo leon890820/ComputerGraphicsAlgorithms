@@ -1,38 +1,53 @@
 package org.example.engine.render;
 
+import org.example.engine.light.Light;
+import org.example.engine.light.PointLight;
 import org.example.engine.rendererPass.*;
 
 public class Renderer {
-    RenderContext ctx;
-    GBufferPass gBufferPass;
-    ScenePass scenePass;
+    private static final int RSM_SIZE = 1024;
 
-    RSMPointBufferPass rsmPointBufferPass;
-    ShadingWithRSMPointPass shadingWithRSMPointPass;
+    private final GBufferPass gBufferPass;
+    private final ScenePass scenePass;
+
+    private final RSMPointBufferPass rsmPointBufferPass;
+    private final ShadingWithRSMPointPass shadingWithRSMPointPass;
 
     public Renderer(int screenWidth, int screenHeight) {
-        gBufferPass = new GBufferPass();
+        gBufferPass = new GBufferPass(screenWidth, screenHeight);
         scenePass = new ScenePass();
-        rsmPointBufferPass = new RSMPointBufferPass();
+        rsmPointBufferPass = new RSMPointBufferPass(RSM_SIZE);
         shadingWithRSMPointPass = new ShadingWithRSMPointPass();
-
-        var rsmCubeBuffer = rsmPointBufferPass.getBuffer();
-        var gBuffer = gBufferPass.getBuffer();
-        var depth = rsmPointBufferPass.getDepth();
-        shadingWithRSMPointPass.SetTextureBuffer(gBuffer[0],gBuffer[1],gBuffer[2],rsmCubeBuffer[0],rsmCubeBuffer[1],rsmCubeBuffer[2], depth);
-        var shadingBuffer = shadingWithRSMPointPass.getBuffer();
-        scenePass.setGBuffer(shadingBuffer[0]);
     }
 
     public void render(RenderContext ctx) {
-        this.ctx = ctx;
-        renderPointLight();
+        PointLight light = getPrimaryPointLight(ctx);
+        if (light == null) {
+            return;
+        }
+
+        renderPointLight(ctx, light);
     }
 
-    public  void renderPointLight(){
+    private void renderPointLight(RenderContext ctx, PointLight light){
         gBufferPass.render(ctx);
-        rsmPointBufferPass.render(ctx);
-        shadingWithRSMPointPass.render(ctx);
-        scenePass.render(ctx);
+        GBuffer gBuffer = gBufferPass.getGBuffer();
+
+        rsmPointBufferPass.render(ctx, light);
+        RSMCubeBuffer rsmCubeBuffer = rsmPointBufferPass.getRSMBuffer();
+
+        shadingWithRSMPointPass.SetTextureBuffer(gBuffer, rsmCubeBuffer);
+        shadingWithRSMPointPass.render(ctx, light);
+
+        scenePass.render(ctx, shadingWithRSMPointPass.getColorTexture(), light);
+    }
+
+    private PointLight getPrimaryPointLight(RenderContext ctx) {
+        for (Light light : ctx.scene.getLights()) {
+            if (light instanceof PointLight) {
+                return (PointLight) light;
+            }
+        }
+        return null;
     }
 }

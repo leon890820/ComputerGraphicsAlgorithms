@@ -8,6 +8,7 @@ import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
 import org.example.engine.mesh.SubMesh;
 import org.example.engine.gameobject.GameObject;
+import org.example.engine.render.RenderContext;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -152,6 +153,10 @@ public abstract class Material {
     }
 
     public abstract void run(GameObject go, SubMesh subMesh);
+
+    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
+        run(go, subMesh);
+    }
 
     public void cleanup() {
     }

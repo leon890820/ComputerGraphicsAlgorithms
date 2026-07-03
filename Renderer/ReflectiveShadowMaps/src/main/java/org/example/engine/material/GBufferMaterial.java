@@ -3,6 +3,7 @@ package org.example.engine.material;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.math.Matrix4;
 import org.example.engine.mesh.SubMesh;
+import org.example.engine.render.RenderContext;
 import org.example.engine.scene.Camera;
 
 public class GBufferMaterial extends Material {
@@ -14,9 +15,20 @@ public class GBufferMaterial extends Material {
         super(frag, vert);
     }
 
+    @Override
     public void run(GameObject go, SubMesh subMesh) {
+        run(null, go, subMesh);
+    }
+
+    @Override
+    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
+        if (ctx == null || ctx.camera == null) {
+            System.out.println("[GBufferMaterial] RenderContext camera is not set.");
+            return;
+        }
+
         Matrix4 model = go.localToWorld();
-        Camera camera = go.scene.getCamera();
+        Camera camera = ctx.camera;
         Matrix4 view = camera.getViewMatrix();
         Matrix4 project = camera.getProjectionMatrix();
 
