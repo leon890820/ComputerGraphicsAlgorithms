@@ -14,6 +14,7 @@ public class SceneA implements IScene {
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
+        Camera.GH_FOV = 60.0f;
         camera.setSize(screenWidth, screenHeight, 0.1f, 1000.0f);
         camera.transform.setPosition(0, 1.0f, 3.0f).setEular(0.0f, 0.0f, 0.0f);
 
@@ -67,3 +68,5 @@ public class SceneA implements IScene {
         return 0.05f;
     }
 }
+
+

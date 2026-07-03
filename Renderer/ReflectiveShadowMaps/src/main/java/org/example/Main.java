@@ -1,26 +1,22 @@
 package org.example;
 
 import org.example.engine.core.Window;
-import org.example.engine.gameobject.GameObject;
-import org.example.engine.gameobject.PhongObject;
-import org.example.engine.gl.SSBO;
-import org.example.engine.light.*;
 import org.example.engine.math.*;
 import org.example.engine.render.*;
 import org.example.engine.scene.*;
+import org.example.scenes.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
 
 public class Main {
     public static boolean RTX = true;
+
     private static final int WIDTH = 1024;
     private static final int HEIGHT = 1024;
 
     private static final float GH_MOUSE_SENSITIVITY = 0.005f;
-    private static final float GH_WALK_SPEED = 3f;
     private static final float MOUSE_DEAD_ZONE = 2;
-    private static final int VPL_NUM = 32;
 
     private final boolean[] key_input = new boolean[4];
 
@@ -28,24 +24,22 @@ public class Main {
 
     private double mouseX;
     private double mouseY;
-    private double pmouseX;
-    private double pmouseY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;
 
     private Window window;
     private Camera main_camera;
     private Scene scene;
-    private Light light;
     private Renderer renderer;
     private RenderContext ctx;
-
-    Vector3 pointA = new Vector3(0, -660f, -800);
-    Vector3 pointB = new Vector3(0, -660f,  800);
-
-    Vector3 currentTarget = pointB;
-    float speed = 200.0f;
-    PhongObject furina;
+    private IScene currentScene;
+    private SceneType currentSceneType = SceneType.A;
 
     private float a = 0;
+
+    private enum SceneType {
+        A
+    }
 
     public static void main(String[] args) {
         new Main().run();
@@ -66,107 +60,25 @@ public class Main {
         window.create();
 
         setupInput(window);
-        scene = new Scene();
+
         main_camera = new Camera();
-        main_camera.setSize(WIDTH, HEIGHT, 0.1f, 10000.0f);
-        main_camera.transform.setPosition(0.0f, -300f, 800.0f).setEular(-0.1f,0.0f,0.0f);
-
-        PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza",null);
-        furina = new PhongObject("../../Model/Furina/Furina",null);
-        furina.setScale(100,100,100).setPosition(0,-660,100);
-
-        sponza.setScene(scene);
-        furina.setScene(scene);
-        scene.setCamera(main_camera);
-        scene.addObject(sponza);
-        scene.addObject(furina);
-
-        light = new PointLight(
-                new Vector3(0, 0, 0),
-                //new Vector3(-0.5f, -1 ,-2 ),
-                new Vector3(0.8f, 0.8f, 0.8f)
-        );
         renderer = new Renderer(WIDTH, HEIGHT);
-        ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
-
-        scene.addLight(light);
-
-        var weight = initVPLsSampleCoordsAndWeights();
-        SSBO ssbo = new SSBO(0, weight);
+        setScene(SceneType.A);
     }
 
     private void draw() {
         move(window);
 
+        currentScene.update(a);
+        a += 0.02f;
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        updateFurinaMovement(furina, 0.016f);
 
-        //updateLightMovement(light, 0.016f);
         renderer.render(ctx);
 
         window.swapBuffers();
         window.pollEvents();
-    }
-    //-410,0,1280
-    //-410,0,-1200
-    //410,0,-1200
-    //410,0,1200
-
-    void updateFurinaMovement(GameObject furina,float dt){
-        Vector3 pos = furina.transform.position;
-
-        Vector3 dir = currentTarget.sub(pos);
-        float dist = dir.length();
-
-        if (dist < 1.0f) {
-            // 到達後切換目標
-            if (currentTarget == pointA) {
-                currentTarget = pointB;
-            } else {
-                currentTarget = pointA;
-            }
-            return;
-        }
-
-        dir = dir.unit_vector();
-        float step = speed * dt;
-
-        if (step > dist) {
-            furina.setPosition(currentTarget.copy());
-        } else {
-            furina.setPosition(pos.add(dir.mult(step)));
-        }
-
-        furina.setEular(0,a,0);
-        a += 0.02f;
-    }
-
-    void updateLightMovement(Light light, float dt) {
-        Vector3 pos = light.transform.position;
-
-        Vector3 dir = currentTarget.sub(pos);
-        float dist = dir.length();
-
-        if (dist < 1.0f) {
-            // 到達後切換目標
-            if (currentTarget == pointA) {
-                currentTarget = pointB;
-            } else {
-                currentTarget = pointA;
-            }
-            return;
-        }
-
-        dir = dir.unit_vector();
-        float step = speed * dt;
-
-        if (step > dist) {
-            light.transform.position = currentTarget.copy();
-        } else {
-            light.transform.position = pos.add(dir.mult(step));
-        }
     }
 
     private void setupInput(Window window) {
@@ -190,10 +102,14 @@ public class Main {
             if (key == GLFW_KEY_D) {
                 key_input[3] = pressed;
             }
+
             if (key == GLFW_KEY_E && action == GLFW_PRESS) {
                 RTX = !RTX;
             }
 
+            if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+                setScene(SceneType.A);
+            }
 
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
                 glfwSetWindowShouldClose(handle, true);
@@ -204,14 +120,12 @@ public class Main {
             if (!mouseInitialized) {
                 mouseX = x;
                 mouseY = y;
-                pmouseX = x;
-                pmouseY = y;
                 mouseInitialized = true;
                 return;
             }
 
-            pmouseX = mouseX;
-            pmouseY = mouseY;
+            mouseDeltaX += mouseX - x;
+            mouseDeltaY += mouseY - y;
             mouseX = x;
             mouseY = y;
         });
@@ -224,8 +138,8 @@ public class Main {
                 glfwGetMouseButton(handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
         if (rightMousePressed) {
-            float rawDx = (float) (pmouseX - mouseX);
-            float rawDy = (float) (pmouseY - mouseY);
+            float rawDx = (float) mouseDeltaX;
+            float rawDy = (float) mouseDeltaY;
 
             if (Math.abs(rawDx) < MOUSE_DEAD_ZONE) {
                 rawDx = 0.0f;
@@ -241,6 +155,8 @@ public class Main {
             Vector3 rot = main_camera.transform.eular;
             main_camera.setEular(rot.x + dy, rot.y + dx, 0.0f);
         }
+        mouseDeltaX = 0.0;
+        mouseDeltaY = 0.0;
 
         Matrix4 camMat = main_camera.localToWorld();
 
@@ -250,11 +166,13 @@ public class Main {
         Vector3 right =
                 camMat.transformDirection(new Vector3(1, 0, 0)).unit_vector();
 
-        float wx = key_input[3] ? GH_WALK_SPEED :
-                key_input[1] ? -GH_WALK_SPEED : 0.0f;
+        float walkSpeed = currentScene.getWalkSpeed();
 
-        float wz = key_input[0] ? GH_WALK_SPEED :
-                key_input[2] ? -GH_WALK_SPEED : 0.0f;
+        float wx = key_input[3] ? walkSpeed :
+                key_input[1] ? -walkSpeed : 0.0f;
+
+        float wz = key_input[0] ? walkSpeed :
+                key_input[2] ? -walkSpeed : 0.0f;
 
         Vector3 mv = forward.mult(wz).add(right.mult(wx));
         Vector3 pos = main_camera.transform.position.add(mv);
@@ -263,20 +181,12 @@ public class Main {
         main_camera.update();
     }
 
-    public float[] initVPLsSampleCoordsAndWeights() {
-        float[] weight = new float[VPL_NUM * 4];
+    private void setScene(SceneType sceneType) {
+        currentSceneType = sceneType;
+        currentScene = new SceneA();
 
-        for (int i = 0; i < VPL_NUM; i++) {
-            float r = (float) Math.sqrt(Math.random());
-            float theta = (float) (2.0 * Math.PI * Math.random());
-            Vector3 vector = Vector3.random_unit_vector();
-
-            weight[i * 4 + 0] = vector.x;
-            weight[i * 4 + 1] = vector.y;
-            weight[i * 4 + 2] = vector.z;   // weight
-            weight[i * 4 + 3] = 0.0f;
-        }
-
-        return weight;
+        scene = currentScene.load(main_camera, WIDTH, HEIGHT);
+        ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
+        a = 0.0f;
     }
 }

@@ -54,4 +54,5 @@ public class SpotLight extends Light {
     public float getLightFar() {
         return far;
     }
+
 }

@@ -11,13 +11,13 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class Texture {
 
-    private IntBuffer tex;
+    IntBuffer tex;
 
-    private int width = 0;
-    private int height = 0;
+    int width = 0;
+    int height = 0;
 
-    private boolean uploaded = false;
-    private boolean flipYOnUpload = true;
+    boolean uploaded = false;
+    boolean flipYOnUpload = true;
     private boolean useMipmap = false;
 
     public Texture() {

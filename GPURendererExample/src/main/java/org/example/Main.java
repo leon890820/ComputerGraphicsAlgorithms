@@ -15,7 +15,6 @@ public class Main {
     private static final int HEIGHT = 1024;
 
     private static final float GH_MOUSE_SENSITIVITY = 0.005f;
-    private static final float GH_WALK_SPEED = 0.05f;
     private static final float MOUSE_DEAD_ZONE = 2;
 
     private final boolean[] key_input = new boolean[4];
@@ -63,7 +62,6 @@ public class Main {
         setupInput(window);
 
         main_camera = new Camera();
-        main_camera.setSize(WIDTH, HEIGHT, 0.1f, 1000.0f);
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
         renderer = new Renderer(WIDTH, HEIGHT);
@@ -170,11 +168,13 @@ public class Main {
         Vector3 right =
                 camMat.transformDirection(new Vector3(1, 0, 0)).unit_vector();
 
-        float wx = key_input[3] ? GH_WALK_SPEED :
-                key_input[1] ? -GH_WALK_SPEED : 0.0f;
+        float walkSpeed = currentScene.getWalkSpeed();
 
-        float wz = key_input[0] ? GH_WALK_SPEED :
-                key_input[2] ? -GH_WALK_SPEED : 0.0f;
+        float wx = key_input[3] ? walkSpeed :
+                key_input[1] ? -walkSpeed : 0.0f;
+
+        float wz = key_input[0] ? walkSpeed :
+                key_input[2] ? -walkSpeed : 0.0f;
 
         Vector3 mv = forward.mult(wz).add(right.mult(wx));
         Vector3 pos = main_camera.transform.position.add(mv);
@@ -192,7 +192,7 @@ public class Main {
             currentScene = new SceneB();
         }
 
-        scene = currentScene.load(main_camera);
+        scene = currentScene.load(main_camera, WIDTH, HEIGHT);
         ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
         a = 0.0f;
     }

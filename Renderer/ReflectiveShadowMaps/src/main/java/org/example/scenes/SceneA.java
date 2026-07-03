@@ -2,14 +2,16 @@ package org.example.scenes;
 
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gl.SSBO;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
-import org.example.engine.material.PhongMaterial;
 import org.example.engine.math.Vector3;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
-public class SceneB implements IScene {
+public class SceneA implements IScene {
+    private static final int VPL_NUM = 32;
+
     private final Vector3 pointA = new Vector3(0, -660f, -800);
     private final Vector3 pointB = new Vector3(0, -660f, 800);
 
@@ -19,6 +21,7 @@ public class SceneB implements IScene {
 
     private PhongObject furina;
     private Light light;
+    private SSBO vplSamples;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -29,11 +32,8 @@ public class SceneB implements IScene {
         Scene scene = new Scene();
         scene.setCamera(camera);
 
-        PhongMaterial phongMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza", phongMaterial);
-        furina = new PhongObject("../../Model/Furina/Furina", phongMaterial);
+        PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza", null);
+        furina = new PhongObject("../../Model/Furina/Furina", null);
         furina.setScale(100, 100, 100).setPosition(0, -660, 100);
 
         sponza.setScene(scene);
@@ -45,9 +45,10 @@ public class SceneB implements IScene {
         light = new PointLight(
                 new Vector3(0, 0, 0),
                 new Vector3(0.8f, 0.8f, 0.8f)
-        );
+        ).setNearFar(1.0f, 10000.0f);
         scene.addLight(light);
 
+        vplSamples = new SSBO(0, initVPLsSampleCoordsAndWeights());
         currentTarget = pointB;
         rotation = 0.0f;
 
@@ -92,6 +93,19 @@ public class SceneB implements IScene {
         furina.setEular(0, rotation, 0);
         rotation += 0.02f;
     }
+
+    private float[] initVPLsSampleCoordsAndWeights() {
+        float[] weight = new float[VPL_NUM * 4];
+
+        for (int i = 0; i < VPL_NUM; i++) {
+            Vector3 vector = Vector3.random_unit_vector();
+
+            weight[i * 4 + 0] = vector.x;
+            weight[i * 4 + 1] = vector.y;
+            weight[i * 4 + 2] = vector.z;
+            weight[i * 4 + 3] = 0.0f;
+        }
+
+        return weight;
+    }
 }
-
-

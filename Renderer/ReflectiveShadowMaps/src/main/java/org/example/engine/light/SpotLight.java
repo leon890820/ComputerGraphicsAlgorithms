@@ -2,13 +2,14 @@ package org.example.engine.light;
 
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
+import org.example.engine.material.LightMaterial;
 
 public class SpotLight extends Light {
 
-    public float fov = 60.0f;
+    public float fov = 45.0f;
     public float aspect = 1.0f;
     public float near = 0.1f;
-    public float far = 10000.0f;
+    public float far = 1000.0f;
 
     public float cutoff = 12.5f;
     public float outerCutoff = 17.5f;
@@ -35,6 +36,18 @@ public class SpotLight extends Light {
     @Override
     public Matrix4 getProjectionMatrix() {
         return Matrix4.Perspective(fov, aspect, near, far);
+    }
+
+    @Override
+    public void setShaderParameter(LightMaterial material) {
+        Matrix4 view = getViewMatrix();
+        Matrix4 project = getProjectionMatrix();
+
+        material.setMatrix4ToUniform("lightSpaceMatrix", project.mult(view));
+        material.setVector3ToUniform("light_color", light_color);
+        material.setVector3ToUniform("light_dir", light_dir);
+        material.setVector3ToUniform("light_pos", transform.position);
+        material.setFloatToUniform("lightFar", far);
     }
 
     @Override

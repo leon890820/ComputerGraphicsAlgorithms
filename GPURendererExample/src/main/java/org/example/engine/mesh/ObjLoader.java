@@ -316,13 +316,32 @@ public class ObjLoader {
                 input = ObjLoader.class.getResourceAsStream("/" + path);
             }
 
-            if (input == null) {
+            ArrayList<String> lines = new ArrayList<>();
+
+            // ===== 先走 resource =====
+            if (input != null) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        lines.add(line);
+                    }
+                }
+                return lines.toArray(new String[0]);
+            }
+
+            // ===== fallback：走檔案系統 =====
+            java.io.File file = new java.io.File(path);
+
+            System.out.println("[ObjLoader] Resource not found, try file:");
+            System.out.println("Absolute = " + file.getAbsolutePath());
+            System.out.println("Canonical = " + file.getCanonicalPath());
+            System.out.println("Exists = " + file.exists());
+
+            if (!file.exists()) {
                 return null;
             }
 
-            ArrayList<String> lines = new ArrayList<>();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+            try (BufferedReader reader = new BufferedReader(new java.io.FileReader(file))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     lines.add(line);
@@ -330,6 +349,7 @@ public class ObjLoader {
             }
 
             return lines.toArray(new String[0]);
+
         } catch (Exception e) {
             System.out.println("[ObjLoader] loadStrings exception: " + path);
             e.printStackTrace();

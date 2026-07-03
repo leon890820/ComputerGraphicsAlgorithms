@@ -21,7 +21,6 @@ public abstract class GameObject {
     MeshFilter meshFilter;
     ArrayList<MeshRenderer> meshRenderers;
 
-    // ⭐ 改掉 Processing global（你之後可以改成 Scene 管）
     public Scene scene;
 
     public GameObject() {
@@ -102,7 +101,7 @@ public abstract class GameObject {
         return meshRenderers;
     }
 
-    Vector3 getPosition() {
+    public Vector3 getPosition() {
         return transform.position;
     }
 
@@ -236,3 +235,4 @@ public abstract class GameObject {
         return meshRenderers.get(0).getMaterial();
     }
 }
+

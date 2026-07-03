@@ -22,7 +22,7 @@ public class Camera extends Quad {
     private boolean viewDirty = true;
     private boolean vpDirty = true;
 
-    public static float GH_FOV = 45.0f;
+    public static float GH_FOV = 60.0f;
 
     public Camera() {
         super(null);
@@ -215,4 +215,9 @@ public class Camera extends Quad {
 
         vpDirty = true;
     }
+
+    public float getFar() {
+        return far;
+    }
 }
+

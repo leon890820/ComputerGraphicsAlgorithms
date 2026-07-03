@@ -215,4 +215,9 @@ public class Camera extends Quad {
 
         vpDirty = true;
     }
+
+    public float getFar() {
+        return far;
+    }
 }
+

@@ -21,7 +21,7 @@ public abstract class GameObject {
     MeshFilter meshFilter;
     ArrayList<MeshRenderer> meshRenderers;
 
-    // â­ æ”¹æ‰ Processing globalï¼ˆä½ ä¹‹å¾Œå¯ä»¥æ”¹æˆ Scene ç®¡ï¼‰
+    // â­??¹æ? Processing globalï¼ˆä?ä¹‹å??¯ä»¥?¹æ? Scene ç®¡ï?
     public Scene scene;
 
     public GameObject() {
@@ -102,7 +102,7 @@ public abstract class GameObject {
         return meshRenderers;
     }
 
-    Vector3 getPosition() {
+    public Vector3 getPosition() {
         return transform.position;
     }
 
@@ -236,3 +236,4 @@ public abstract class GameObject {
         return meshRenderers.get(0).getMaterial();
     }
 }
+

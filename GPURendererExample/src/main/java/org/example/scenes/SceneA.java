@@ -12,7 +12,10 @@ public class SceneA implements IScene {
     private PointLight light;
 
     @Override
-    public Scene load(Camera camera) {
+    public Scene load(Camera camera, int screenWidth, int screenHeight) {
+        Camera.GH_FOV = 60.0f;
+        camera.setSize(screenWidth, screenHeight, 0.1f, 1000.0f);
+
         Scene scene = new Scene();
         scene.setCamera(camera);
 
@@ -59,5 +62,10 @@ public class SceneA implements IScene {
                 10f,
                 (float) Math.sin(time) * 10
         );
+    }
+
+    @Override
+    public float getWalkSpeed() {
+        return 0.05f;
     }
 }

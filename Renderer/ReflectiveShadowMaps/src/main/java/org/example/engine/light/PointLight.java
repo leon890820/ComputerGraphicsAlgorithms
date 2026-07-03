@@ -1,11 +1,13 @@
 package org.example.engine.light;
+
+import org.example.engine.material.LightMaterial;
 import org.example.engine.math.*;
 
 public class PointLight extends Light {
 
     float radius = 10.0f;
-    float near = 1f;
-    float far = 10000.0f;
+    float near = 0.1f;
+    float far = 1000.0f;
     float intensity = 1.0f;
 
     public PointLight(Vector3 pos, Vector3 c) {
@@ -66,10 +68,18 @@ public class PointLight extends Light {
         return Matrix4.Identity();
     }
 
+    @Override
+    public void setShaderParameter(LightMaterial mat) {
+        mat.setVector3ToUniform("light_pos", transform.position);
+        mat.setVector3ToUniform("light_color", light_color);
+        //mat.setFloatToUniform("light_radius", radius);
+        //mat.setFloatToUniform("light_intensity", intensity);
+        mat.setFloatToUniform("lightFar", far);
+    }
+
 
     public float getLightFar(){
         return far;
     }
-
 
 }
