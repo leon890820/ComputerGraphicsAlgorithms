@@ -3,6 +3,7 @@ package org.example.engine.rendererPass;
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
 import org.example.engine.gameobject.GameObject;
+import org.example.engine.light.Light;
 import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;
 
@@ -11,18 +12,16 @@ import static org.lwjgl.opengl.GL33.*;
 public class ShadowPass extends RenderPass {
     FBO ShadowBuffer;
     ShadowMaterial shadowMaterial;
-    public ShadowPass(){
-        ShadowBuffer = new FBO(1024, 1024, 1, GL_LINEAR, true);
+    public ShadowPass(int size){
+        ShadowBuffer = new FBO(size, size, 1, GL_LINEAR, true);
         shadowMaterial = new ShadowMaterial("/shaders/Shadow.frag", "/shaders/Shadow.vert");
     }
 
-    @Override
-    public void render(RenderContext ctx) {
+    public void render(RenderContext ctx, Light light) {
         ShadowBuffer.bindFrameBuffer();
-        var light = ctx.scene.getLights();
-        shadowMaterial.setLight(light.get(0));
+        shadowMaterial.setLight(light);
         for(GameObject go : ctx.scene.getObjects()){
-            go.runWithMaterial(shadowMaterial);
+            go.runWithMaterial(ctx, shadowMaterial);
         }
         ShadowBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }

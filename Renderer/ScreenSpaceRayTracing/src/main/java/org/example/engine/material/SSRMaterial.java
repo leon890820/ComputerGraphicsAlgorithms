@@ -4,6 +4,8 @@ import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.Texture;
 import org.example.engine.math.Matrix4;
 import org.example.engine.mesh.SubMesh;
+import org.example.engine.render.RenderContext;
+import org.example.engine.scene.Camera;
 
 
 public class SSRMaterial extends Material{
@@ -12,7 +14,6 @@ public class SSRMaterial extends Material{
     Texture normalTex;
     Texture worldPosTex;
     Texture depthTex;
-
     public SSRMaterial(String frag) {
         super(frag);
     }
@@ -40,8 +41,18 @@ public class SSRMaterial extends Material{
 
     @Override
     public void run(GameObject go, SubMesh subMesh) {
+        run(null, go, subMesh);
+    }
+
+    @Override
+    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
+        if (ctx == null || ctx.camera == null) {
+            System.out.println("[SSRMaterial] RenderContext camera is not set.");
+            return;
+        }
+
+        Camera camera = ctx.camera;
         Matrix4 model = go.localToWorld();
-        var camera = go.scene.getCamera();
         Matrix4 V = camera.getViewMatrix();
         Matrix4 P = camera.getProjectionMatrix();
 
@@ -56,7 +67,7 @@ public class SSRMaterial extends Material{
 
         setVector3ToUniform("cameraPos", camera.transform.position);
         setFloatToUniform("cameraFar", camera.getFar());
-        setFloatToUniform("u_WindowWidth", 1024);
-        setFloatToUniform("u_WindowHeight", 1024);
+        setFloatToUniform("u_WindowWidth", ctx.screenWidth);
+        setFloatToUniform("u_WindowHeight", ctx.screenHeight);
     }
 }

@@ -12,15 +12,14 @@ abstract public class ScenePass extends RenderPass {
         sceneMaterial = new SceneMaterial("/shaders/quad.frag", "/shaders/quad.vert");
     }
 
-    public void setGBuffer(Texture albedo) {
+    public void setAlbedo(Texture albedo) {
         albedoTex = albedo;
     }
 
 
-    @Override
     public void render(RenderContext ctx) {
         sceneMaterial.setAlbedoTex(albedoTex);
-        Camera camera = ctx.scene.getCamera();
-        camera.runWithMaterial(sceneMaterial);
+        Camera camera = ctx.camera;
+        camera.runWithMaterial(ctx, sceneMaterial);
     }
 }

@@ -7,6 +7,7 @@ import org.example.engine.mesh.MeshRenderer;
 import org.example.engine.mesh.SubMesh;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
+import org.example.engine.render.RenderContext;
 import org.example.engine.scene.Scene;
 import org.example.engine.scene.Transform;
 
@@ -121,10 +122,26 @@ public abstract class GameObject {
         }
     }
 
+    public void run(RenderContext ctx) {
+        for (MeshRenderer mr : meshRenderers) {
+            if (mr != null) {
+                mr.render(ctx, this);
+            }
+        }
+    }
+
     public void runWithMaterial(Material overrideMaterial) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
                 mr.render(this, overrideMaterial);
+            }
+        }
+    }
+
+    public void runWithMaterial(RenderContext ctx, Material overrideMaterial) {
+        for (MeshRenderer mr : meshRenderers) {
+            if (mr != null) {
+                mr.render(ctx, this, overrideMaterial);
             }
         }
     }
@@ -137,10 +154,26 @@ public abstract class GameObject {
         }
     }
 
+    public void debugRun(RenderContext ctx) {
+        for (MeshRenderer mr : meshRenderers) {
+            if (mr != null) {
+                mr.debugRender(ctx, this);
+            }
+        }
+    }
+
     public void debugRunWithMaterial(Material overrideMaterial) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
                 mr.debugRender(this, overrideMaterial);
+            }
+        }
+    }
+
+    public void debugRunWithMaterial(RenderContext ctx, Material overrideMaterial) {
+        for (MeshRenderer mr : meshRenderers) {
+            if (mr != null) {
+                mr.debugRender(ctx, this, overrideMaterial);
             }
         }
     }

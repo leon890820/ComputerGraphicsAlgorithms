@@ -4,29 +4,35 @@ import org.example.engine.light.Light;
 import org.example.engine.rendererPass.*;
 
 public class Renderer {
-    RenderContext ctx;
-    public GBufferPass gBufferPass;
-    public SSRPass ssrPass;
-    public ScenePass scenePass;
+    private final GBufferPass gBufferPass;
+    private final SSRPass ssrPass;
+    private final ScenePass scenePass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
-        gBufferPass = new GBufferPass();
-        ssrPass = new SSRPass();
+        gBufferPass = new GBufferPass(screenWidth, screenHeight);
+        ssrPass = new SSRPass(screenWidth, screenHeight);
         scenePass = new SpotScenePass();
-        var gbuffer = gBufferPass.getBuffer();
-        var ssrbuffer = ssrPass.getBuffer();
-        ssrPass.setAlbedo(gbuffer[0]).setNormal(gbuffer[1]).setWorldPos(gbuffer[2]).setDepth(gbuffer[3]);
-        scenePass.setGBuffer(ssrbuffer[0]);
     }
 
     public void render(RenderContext ctx) {
-        this.ctx = ctx;
-        gBufferPass.render(ctx);
-        ssrPass.render(ctx);
+        Light light = getPrimaryLight(ctx);
+
+        gBufferPass.render(ctx, light);
+        GBuffer gBuffer = gBufferPass.getGBuffer();
+
+        ssrPass.setGBuffer(gBuffer);
+        ssrPass.render(ctx, light);
+
+        scenePass.setAlbedo(ssrPass.getColorTexture());
         scenePass.render(ctx);
     }
 
-
+    private Light getPrimaryLight(RenderContext ctx) {
+        for (Light light : ctx.scene.getLights()) {
+            return light;
+        }
+        return null;
+    }
 
 }

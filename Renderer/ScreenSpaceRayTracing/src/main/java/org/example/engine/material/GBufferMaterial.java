@@ -5,12 +5,12 @@ import org.example.engine.gl.Texture;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
 import org.example.engine.mesh.SubMesh;
+import org.example.engine.render.RenderContext;
 import org.example.engine.scene.Camera;
 
 public class GBufferMaterial extends Material {
 
     Texture texture;
-
     public GBufferMaterial(String frag) {
         super(frag);
     }
@@ -26,9 +26,19 @@ public class GBufferMaterial extends Material {
 
     @Override
     public void run(GameObject go, SubMesh subMesh) {
+        run(null, go, subMesh);
+    }
+
+    @Override
+    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
+        if (ctx == null || ctx.camera == null) {
+            System.out.println("[GBufferMaterial] RenderContext camera is not set.");
+            return;
+        }
+
+        Camera camera = ctx.camera;
         Matrix4 model = go.localToWorld();
-        Matrix4 mvp = go.MVP();
-        var camera = go.scene.getCamera();
+        Matrix4 mvp = camera.Matrix().mult(model);
         Matrix4 V = camera.getViewMatrix();
 
         setMatrix4ToUniform("MVP", mvp);

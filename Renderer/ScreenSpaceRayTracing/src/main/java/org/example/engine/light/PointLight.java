@@ -1,11 +1,7 @@
 package org.example.engine.light;
 
-import org.example.engine.gl.Texture;
-import org.example.engine.gl.TextureCube;
 import org.example.engine.material.LightMaterial;
 import org.example.engine.math.*;
-import org.example.engine.render.RenderContext;
-import org.example.engine.render.Renderer;
 
 public class PointLight extends Light {
 
@@ -85,22 +81,5 @@ public class PointLight extends Light {
     public float getLightFar(){
         return far;
     }
-
-//    @Override
-//    public void renderShadow(RenderContext ctx, Renderer renderer) {
-//        renderer.pointShadowPass.render(ctx);
-//    }
-//
-//    @Override
-//    public void renderLighting(RenderContext ctx, Renderer renderer) {
-//        Texture[] buffer = renderer.gBufferPass.getBuffer();
-//        TextureCube depth = renderer.pointShadowPass.getDepthBuffer();
-//
-//        renderer.pointScenePass.setGBuffer(
-//                buffer[0], buffer[1], buffer[2], depth
-//        );
-//
-//        renderer.pointScenePass.render(ctx);
-//    }
 
 }
