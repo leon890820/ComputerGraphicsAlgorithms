@@ -7,6 +7,12 @@ repositories {
     mavenCentral()
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(20)
+    }
+}
+
 ext {
     lwjglVersion = "3.3.6"
     lwjglNatives = "natives-windows"

@@ -68,7 +68,7 @@ bool Query(vec2 rayZRange, vec2 uv, vec3 surfaceNormal){
     vec3 sceneNormal = normalize(texture(normalTex, texelUV).rgb);
     float rayNearZ = rayZRange.x;
     float rayFarZ = rayZRange.y;
-    float thickness = 0.06;
+    float thickness = max(0.01, abs(rayNearZ) * 0.001);
 
     bool sameSurface = dot(sceneNormal, surfaceNormal) > 0.98 && abs(sceneViewZ - rayNearZ) < thickness * 2.0;
     if (sameSurface)
@@ -92,7 +92,8 @@ Result RayMarching(Ray vRay){
     result.outTest = false;
 
     vec3 Begin = vRay.Origin;
-    vec3 End = vRay.Origin + vRay.Direction * u_RayLength;
+    float rayLength = min(u_RayLength, cameraFar);
+    vec3 End = vRay.Origin + vRay.Direction * rayLength;
 
     vec3 V0 = projectToViewSpace(Begin);
     vec3 V1 = projectToViewSpace(End);
