@@ -1,13 +1,10 @@
 package org.example;
 
 import org.example.engine.core.Window;
-import org.example.engine.gameobject.PhongObject;
-import org.example.engine.gl.Texture;
-import org.example.engine.material.PhongMaterial;
-import org.example.engine.light.*;
 import org.example.engine.math.*;
 import org.example.engine.render.*;
 import org.example.engine.scene.*;
+import org.example.scenes.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.*;
@@ -33,11 +30,17 @@ public class Main {
     private Window window;
     private Camera main_camera;
     private Scene scene;
-    private Light light;
     private Renderer renderer;
     private RenderContext ctx;
+    private IScene currentScene;
+    private SceneType currentSceneType = SceneType.A;
 
     private float a = 0;
+
+    private enum SceneType {
+        A,
+        B
+    }
 
     public static void main(String[] args) {
         new Main().run();
@@ -63,51 +66,14 @@ public class Main {
         main_camera.setSize(WIDTH, HEIGHT, 0.1f, 1000.0f);
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
-        scene = new Scene();
-        scene.setCamera(main_camera);
-
-        light = new PointLight(
-                new Vector3(10, 10, 0),
-                new Vector3(0.8f, 0.8f, 0.8f)
-        );
-
         renderer = new Renderer(WIDTH, HEIGHT);
-        ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
-
-        PhongMaterial phongMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        PhongObject phongObject =
-                new PhongObject("/meshes/Furina/Furina", phongMaterial);
-
-        PhongMaterial floorMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        Texture floorTexture = new Texture("/textures/Floor.png");
-        floorMaterial.setTexture(floorTexture);
-
-        PhongObject floor = new PhongObject("/meshes/quad", floorMaterial);
-        floor.setEular(3.1415926f / 2, 0, 0)
-                .setScale(5, 5, 5)
-                .setPosition(0, 0, 0);
-
-        phongObject.setScene(scene);
-        floor.setScene(scene);
-
-        scene.addObject(phongObject);
-        scene.addObject(floor);
-        scene.addLight(light);
+        setScene(SceneType.A);
     }
 
     private void draw() {
         move(window);
 
-        light.setPosition(
-                (float) Math.cos(a) * 10,
-                10f,
-                (float) Math.sin(a) * 10
-        );
-
+        currentScene.update(a);
         a += 0.02f;
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -143,6 +109,14 @@ public class Main {
 
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
                 glfwSetWindowShouldClose(handle, true);
+            }
+
+            if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+                setScene(SceneType.A);
+            }
+
+            if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+                setScene(SceneType.B);
             }
         });
 
@@ -207,5 +181,19 @@ public class Main {
 
         main_camera.setPosition(pos);
         main_camera.update();
+    }
+
+    private void setScene(SceneType sceneType) {
+        currentSceneType = sceneType;
+
+        if (currentSceneType == SceneType.A) {
+            currentScene = new SceneA();
+        } else {
+            currentScene = new SceneB();
+        }
+
+        scene = currentScene.load(main_camera);
+        ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
+        a = 0.0f;
     }
 }
