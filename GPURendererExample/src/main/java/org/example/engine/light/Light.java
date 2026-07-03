@@ -2,8 +2,6 @@ package org.example.engine.light;
 
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
-import org.example.engine.render.RenderContext;
-import org.example.engine.render.Renderer;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.material.LightMaterial;
 
@@ -96,10 +94,6 @@ public abstract class Light extends GameObject {
     public abstract void setShaderParameter(LightMaterial material);
 
     public abstract float getLightFar();
-
-    public abstract void renderShadow(RenderContext ctx, Renderer renderer);
-
-    public abstract void renderLighting(RenderContext ctx, Renderer renderer);
 
     // ===== Getter =====
     public float getIntensity() {

@@ -1,10 +1,8 @@
 package org.example.engine.material;
 
-import org.example.engine.material.Material;
 import org.example.engine.gl.Texture;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.mesh.SubMesh;
-import org.example.engine.light.Light;
 
 public class LightMaterial extends Material {
 
@@ -55,6 +53,6 @@ public class LightMaterial extends Material {
         unbindTexture(0);
         unbindTexture(1);
         unbindTexture(2);
-        unbindTexture(4); // shadowMap 如果有綁
+        unbindTexture(3); // shadowMap
     }
 }

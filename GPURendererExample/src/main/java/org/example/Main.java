@@ -27,8 +27,8 @@ public class Main {
 
     private double mouseX;
     private double mouseY;
-    private double pmouseX;
-    private double pmouseY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;
 
     private Window window;
     private Camera main_camera;
@@ -150,14 +150,12 @@ public class Main {
             if (!mouseInitialized) {
                 mouseX = x;
                 mouseY = y;
-                pmouseX = x;
-                pmouseY = y;
                 mouseInitialized = true;
                 return;
             }
 
-            pmouseX = mouseX;
-            pmouseY = mouseY;
+            mouseDeltaX += mouseX - x;
+            mouseDeltaY += mouseY - y;
             mouseX = x;
             mouseY = y;
         });
@@ -170,8 +168,8 @@ public class Main {
                 glfwGetMouseButton(handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
         if (rightMousePressed) {
-            float rawDx = (float) (pmouseX - mouseX);
-            float rawDy = (float) (pmouseY - mouseY);
+            float rawDx = (float) mouseDeltaX;
+            float rawDy = (float) mouseDeltaY;
 
             if (Math.abs(rawDx) < MOUSE_DEAD_ZONE) {
                 rawDx = 0.0f;
@@ -187,6 +185,8 @@ public class Main {
             Vector3 rot = main_camera.transform.eular;
             main_camera.setEular(rot.x + dy, rot.y + dx, 0.0f);
         }
+        mouseDeltaX = 0.0;
+        mouseDeltaY = 0.0;
 
         Matrix4 camMat = main_camera.localToWorld();
 

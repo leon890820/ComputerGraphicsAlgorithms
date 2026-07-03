@@ -3,9 +3,6 @@ package org.example.engine.light;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
 import org.example.engine.material.LightMaterial;
-import org.example.engine.render.RenderContext;
-import org.example.engine.render.Renderer;
-import org.example.engine.gl.Texture;
 
 public class SpotLight extends Light {
 
@@ -58,19 +55,4 @@ public class SpotLight extends Light {
         return far;
     }
 
-    @Override
-    public void renderShadow(RenderContext ctx, Renderer renderer) {
-        renderer.shadowPass.render(ctx);
-    }
-
-    @Override
-    public void renderLighting(RenderContext ctx, Renderer renderer) {
-        Texture[] buffer = renderer.gBufferPass.getBuffer();
-        Texture depth = renderer.shadowPass.getDepthBuffer();
-        renderer.spotScenePass.setGBuffer(
-                buffer[0], buffer[1], buffer[2], depth
-        );
-
-        renderer.spotScenePass.render(ctx);
-    }
 }

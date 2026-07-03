@@ -2,8 +2,6 @@ package org.example.engine.light;
 
 import org.example.engine.math.*;
 import org.example.engine.material.*;
-import org.example.engine.gl.*;
-import org.example.engine.render.*;
 
 public class DirectionalLight extends Light {
 
@@ -51,23 +49,6 @@ public class DirectionalLight extends Light {
     @Override
     public float getLightFar(){
         return far;
-    }
-
-    @Override
-    public void renderShadow(RenderContext ctx, Renderer renderer) {
-        renderer.shadowPass.render(ctx);
-    }
-
-    @Override
-    public void renderLighting(RenderContext ctx, Renderer renderer) {
-        Texture[] buffer = renderer.gBufferPass.getBuffer();
-        Texture depth = renderer.shadowPass.getDepthBuffer();
-
-        renderer.directionalScenePass.setGBuffer(
-                buffer[0], buffer[1], buffer[2], depth
-        );
-
-        renderer.directionalScenePass.render(ctx);
     }
 
 }

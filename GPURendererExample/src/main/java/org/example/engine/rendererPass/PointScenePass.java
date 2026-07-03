@@ -1,32 +1,27 @@
 package org.example.engine.rendererPass;
 
 import org.example.engine.gl.*;
+import org.example.engine.light.PointLight;
 import org.example.engine.material.PointLightMaterial;
+import org.example.engine.render.GBuffer;
 import org.example.engine.scene.*;
 import org.example.engine.render.RenderContext;
 
-public class PointScenePass extends ScenePass{
+public class PointScenePass extends RenderPass {
     PointLightMaterial pointLightMaterial;
-    TextureCube shadowCubeMap;
     public PointScenePass(){
         pointLightMaterial = new PointLightMaterial("/shaders/pointLight.frag", "/shaders/quad.vert");
     }
 
-    public void setGBuffer(Texture albedo, Texture normal, Texture position, TextureCube depth) {
-        albedoTex = albedo;
-        normalTex = normal;
-        positionTex = position;
-        shadowCubeMap = depth;
-    }
-
-    @Override
-    public void render(RenderContext ctx) {
-        var light = ctx.scene.getLights();
-        pointLightMaterial.setAlbedoTex(albedoTex).setNormalTex(normalTex).setPositionTex(positionTex);
-        pointLightMaterial.setDepthTex(shadowCubeMap);
-        pointLightMaterial.setLight(light.get(0));
-        Camera camera = ctx.scene.getCamera();
-        camera.runWithMaterial(pointLightMaterial);
+    public void render(RenderContext ctx, GBuffer gBuffer, PointLight light, TextureCube shadowDepth) {
+        pointLightMaterial
+                .setAlbedoTex(gBuffer.albedo)
+                .setNormalTex(gBuffer.normal)
+                .setPositionTex(gBuffer.position);
+        pointLightMaterial.setDepthTex(shadowDepth);
+        pointLightMaterial.setLight(light);
+        Camera camera = ctx.camera;
+        camera.runWithMaterial(ctx, pointLightMaterial);
     }
 }
 
