@@ -2,6 +2,7 @@ package org.example.scenes;
 
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gl.Texture;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PhongMaterial;
@@ -39,6 +40,10 @@ public class SceneB implements IScene {
 
         SSRMaterial ssrMaterial =
                 new SSRMaterial("/shaders/ScreenSpaceRayTracing.frag", "/shaders/ScreenSpaceRayTracing.vert");
+        ssrMaterial
+                .setNormalMap(new Texture("/textures/Wall03_Normal.jpg"))
+                .setFuzz(0.05f)
+                .setFuzzySampleCount(8);
 
         PhongObject ssrFloor = new PhongObject("/meshes/quad", ssrMaterial);
         ssrFloor.setEular(-3.1415926f / 2, 0, 0)

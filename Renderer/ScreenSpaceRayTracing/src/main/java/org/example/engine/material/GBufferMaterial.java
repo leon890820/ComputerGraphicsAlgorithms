@@ -11,6 +11,7 @@ import org.example.engine.scene.Camera;
 public class GBufferMaterial extends Material {
 
     Texture texture;
+    Texture normalMap;
     public GBufferMaterial(String frag) {
         super(frag);
     }
@@ -21,6 +22,11 @@ public class GBufferMaterial extends Material {
 
     public GBufferMaterial setTexture(Texture t) {
         texture = t;
+        return this;
+    }
+
+    public GBufferMaterial setNormalMap(Texture t) {
+        normalMap = t;
         return this;
     }
 
@@ -63,10 +69,18 @@ public class GBufferMaterial extends Material {
             setIntToUniform("hasTexture", 0);
             setVector3ToUniform("defaultColor", new Vector3(0.45f, 0.45f, 0.45f));
         }
+
+        if (normalMap != null && normalMap.isUploaded()) {
+            setIntToUniform("hasNormalMap", 1);
+            setTexture("normalMap", normalMap, 1);
+        } else {
+            setIntToUniform("hasNormalMap", 0);
+        }
     }
 
     @Override
     public void cleanup() {
         unbindTexture(0);
+        unbindTexture(1);
     }
 }

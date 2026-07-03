@@ -14,6 +14,9 @@ public class SSRMaterial extends Material{
     Texture normalTex;
     Texture worldPosTex;
     Texture depthTex;
+    Texture normalMapTex;
+    float fuzz = 0.0f;
+    int fuzzySampleCount = 1;
     public SSRMaterial(String frag) {
         super(frag);
     }
@@ -36,6 +39,25 @@ public class SSRMaterial extends Material{
     }
     public SSRMaterial setDepthTex(Texture t) {
         depthTex = t;
+        return this;
+    }
+
+    public SSRMaterial setNormalMap(Texture t) {
+        normalMapTex = t;
+        return this;
+    }
+
+    public Texture getNormalMap() {
+        return normalMapTex;
+    }
+
+    public SSRMaterial setFuzz(float fuzz) {
+        this.fuzz = Math.max(0.0f, fuzz);
+        return this;
+    }
+
+    public SSRMaterial setFuzzySampleCount(int sampleCount) {
+        fuzzySampleCount = Math.max(1, sampleCount);
         return this;
     }
 
@@ -64,10 +86,27 @@ public class SSRMaterial extends Material{
         setTexture("normalTex", normalTex, 1);
         setTexture("worldPosTex", worldPosTex, 2);
         setTexture("depthTex", depthTex, 3);
+        if (normalMapTex != null && normalMapTex.isUploaded()) {
+            setIntToUniform("hasNormalMap", 1);
+            setTexture("floorNormalMap", normalMapTex, 4);
+        } else {
+            setIntToUniform("hasNormalMap", 0);
+        }
 
         setVector3ToUniform("cameraPos", camera.transform.position);
         setFloatToUniform("cameraFar", camera.getFar());
         setFloatToUniform("u_WindowWidth", ctx.screenWidth);
         setFloatToUniform("u_WindowHeight", ctx.screenHeight);
+        setFloatToUniform("u_Fuzz", fuzz);
+        setIntToUniform("u_FuzzySampleCount", fuzzySampleCount);
+    }
+
+    @Override
+    public void cleanup() {
+        unbindTexture(0);
+        unbindTexture(1);
+        unbindTexture(2);
+        unbindTexture(3);
+        unbindTexture(4);
     }
 }

@@ -9,10 +9,13 @@ uniform float cameraFar;
 uniform sampler2D tex;
 uniform int hasTexture;
 uniform vec3 defaultColor;
+uniform sampler2D normalMap;
+uniform int hasNormalMap;
 
 uniform mat4 u_ViewMatrix;
 
 in vec3 worldNormal;
+in vec3 worldTangent;
 in vec3 worldVertex;
 in vec2 texCoord;
 
@@ -49,8 +52,18 @@ void main()
     // Ambient
     fragColor = vec4(mapped * ambient_light, 1.0);
 
+    vec3 N = normalize(worldNormal);
+
+    if (hasNormalMap == 1) {
+        vec3 T = normalize(worldTangent - N * dot(N, worldTangent));
+        vec3 B = normalize(cross(N, T));
+        mat3 TBN = mat3(T, B, N);
+        vec3 tangentNormal = texture(normalMap, texCoord).rgb * 2.0 - 1.0;
+        N = normalize(TBN * tangentNormal);
+    }
+
     // World Normal
-    fragNormal = vec4(normalize(worldNormal), 1.0);
+    fragNormal = vec4(N, 1.0);
 
     // World Position
     fragWorldPos = vec4(worldVertex, 1.0);

@@ -9,15 +9,24 @@ uniform mat4 u_ProjectionMatrix;
 uniform sampler2D albedoTex;
 uniform sampler2D normalTex;
 uniform sampler2D depthTex;
+uniform sampler2D floorNormalMap;
+uniform int hasNormalMap;
 
 uniform vec3 cameraPos;
 uniform float cameraFar;
 uniform float u_RayLength = 10000;
 uniform float u_WindowWidth;
 uniform float u_WindowHeight;
+uniform float u_Fuzz;
+uniform int u_FuzzySampleCount;
+
+const int MAX_FUZZY_SAMPLE_COUNT = 4;
+const float PI = 3.14159265359;
 
 in vec3 worldVertex;
 in vec3 worldNormal;
+in vec3 worldTangent;
+in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -55,6 +64,45 @@ vec3 worldSpaceToScreenSpace(vec3 worldPos){
 float distanceSquared(vec2 A, vec2 B){
     A -= B;
     return dot(A, A);
+}
+
+vec3 getSurfaceNormal(){
+    vec3 N = normalize(worldNormal);
+    if (hasNormalMap == 1) {
+        vec3 T = normalize(worldTangent - N * dot(N, worldTangent));
+        vec3 B = normalize(cross(N, T));
+        mat3 TBN = mat3(T, B, N);
+        vec3 tangentNormal = texture(floorNormalMap, texCoord).rgb * 2.0 - 1.0;
+        N = normalize(TBN * tangentNormal);
+    }
+    return N;
+}
+
+float hash13(vec3 p){
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+vec3 randomInUnitSphere(int sampleIndex){
+    vec3 seed = vec3(gl_FragCoord.xy, float(sampleIndex) + texCoord.x * 17.0 + texCoord.y * 31.0);
+    float z = hash13(seed + 11.0) * 2.0 - 1.0;
+    float a = hash13(seed + 23.0) * 2.0 * PI;
+    float r = pow(hash13(seed + 37.0), 0.3333333);
+    float xy = sqrt(max(0.0, 1.0 - z * z));
+    return vec3(cos(a) * xy, sin(a) * xy, z) * r;
+}
+
+vec3 getFuzzyReflectionDirection(vec3 reflectionDir, vec3 normal, int sampleIndex){
+    if (u_Fuzz <= 0.0001 || u_FuzzySampleCount <= 1) {
+        return reflectionDir;
+    }
+
+    vec3 dir = normalize(reflectionDir + randomInUnitSphere(sampleIndex) * u_Fuzz);
+    if (dot(dir, normal) <= 0.0) {
+        dir = reflect(dir, normal);
+    }
+    return normalize(dir);
 }
 
 bool Query(vec2 rayZRange, vec2 uv, vec3 surfaceNormal){
@@ -168,23 +216,31 @@ Result RayMarching(Ray vRay){
 void main() {
     vec3 screenPos = worldSpaceToScreenSpace(worldVertex);
     vec3 albedo = texture(albedoTex, screenPos.xy).rgb;
-    vec3 normal = normalize(worldNormal);
+    vec3 normal = getSurfaceNormal();
 
     vec3 camPosToWorldPos = normalize(cameraPos - worldVertex);
-    vec3 dir = normalize(reflect(-camPosToWorldPos, normal));
+    vec3 reflectionDir = normalize(reflect(-camPosToWorldPos, normal));
+    int sampleCount = clamp(u_FuzzySampleCount, 1, MAX_FUZZY_SAMPLE_COUNT);
+    vec3 reflectedColor = vec3(0.0);
 
-    Ray ray;
-    ray.Origin = worldVertex;
-    ray.Direction = dir;
-    ray.SurfaceNormal = normal;
+    for (int i = 0; i < MAX_FUZZY_SAMPLE_COUNT; i++) {
+        if (i >= sampleCount) {
+            break;
+        }
 
-    Result result = RayMarching(ray);
+        Ray ray;
+        ray.Origin = worldVertex;
+        ray.Direction = getFuzzyReflectionDirection(reflectionDir, normal, i);
+        ray.SurfaceNormal = normal;
 
-    if(result.IsHit){
-        fragColor = vec4(texture(albedoTex,result.UV / vec2(u_WindowWidth,u_WindowHeight)).xyz, 1);
+        Result result = RayMarching(ray);
+        if(result.IsHit){
+            reflectedColor += texture(albedoTex,result.UV / vec2(u_WindowWidth,u_WindowHeight)).xyz;
+        }
+        else{
+            reflectedColor += albedo;
+        }
     }
-    else{
-        fragColor = vec4(albedo, 1);
-    }
 
+    fragColor = vec4(reflectedColor / float(sampleCount), 1);
 }

@@ -6,8 +6,10 @@ uniform mat4 modelMatrix;
 layout(location = 0) in vec3 aVertexPosition;
 layout(location = 1) in vec3 aNormalPosition;
 layout(location = 2) in vec2 aTexCoordPosition;
+layout(location = 3) in vec3 aTangentPosition;
 
 out vec3 worldNormal;
+out vec3 worldTangent;
 out vec3 worldVertex;
 out vec2 texCoord;
 
@@ -17,6 +19,7 @@ void main() {
     gl_Position = MVP * vec4(aVertexPosition, 1.0);
 
     worldNormal = normalize(modelMatrix * vec4(aNormalPosition,0.0)).xyz;
+    worldTangent = normalize(modelMatrix * vec4(aTangentPosition,0.0)).xyz;
     worldVertex = worldPos.xyz;
     texCoord = aTexCoordPosition;
 }
