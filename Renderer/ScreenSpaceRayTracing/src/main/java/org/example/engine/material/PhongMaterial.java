@@ -48,7 +48,7 @@ public class PhongMaterial extends Material {
 
         setVector3ToUniform("view_pos", camera.transform.position);
 
-        setVector3ToUniform("light_color", lightSource.light_color);
+        setVector3ToUniform("light_pos", lightSource.transform.position);
         setVector3ToUniform("light_dir", lightSource.light_dir);
         setVector3ToUniform("light_color", lightSource.light_color);
 

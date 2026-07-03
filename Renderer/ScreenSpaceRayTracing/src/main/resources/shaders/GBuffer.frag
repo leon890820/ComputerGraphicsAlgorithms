@@ -7,6 +7,8 @@ uniform vec3 ambient_light;
 uniform vec3 cameraPos;
 uniform float cameraFar;
 uniform sampler2D tex;
+uniform int hasTexture;
+uniform vec3 defaultColor;
 
 uniform mat4 u_ViewMatrix;
 
@@ -23,12 +25,17 @@ void main()
 {
     float gamma = 2.2;
 
-    // 讀取 Diffuse
-    vec4 texColor = texture(tex, texCoord);
+    vec4 texColor;
 
-    // Alpha Cutout
-    if (texColor.a != 1.0)
-    discard;
+    if (hasTexture == 1) {
+        texColor = texture(tex, texCoord);
+
+        // Alpha Cutout
+        if (texColor.a != 1.0)
+            discard;
+    } else {
+        texColor = vec4(defaultColor, 1.0);
+    }
 
     // sRGB -> Linear
     vec3 diffuseColor = pow(texColor.rgb, vec3(gamma));

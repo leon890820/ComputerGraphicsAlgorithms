@@ -37,6 +37,11 @@ public class GBufferPass extends RenderPass {
         glClearColor(0.0f, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         for (GameObject go : ctx.scene.getObjects()) {
+            Material material = go.getMaterial();
+            if (material instanceof SSRMaterial) {
+                continue;
+            }
+
             if (light != null) {
                 gBufferMaterial.setLight(light);
             }

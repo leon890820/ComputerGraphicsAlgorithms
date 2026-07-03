@@ -5,6 +5,7 @@ import org.example.engine.gameobject.PhongObject;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PhongMaterial;
+import org.example.engine.material.SSRMaterial;
 import org.example.engine.math.Vector3;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
@@ -24,7 +25,7 @@ public class SceneB implements IScene {
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
         Camera.GH_FOV = 45.0f;
         camera.setSize(screenWidth, screenHeight, 0.1f, 10000.0f);
-        camera.transform.setPosition(0.0f, -300f, 800.0f).setEular(-0.1f, 0.0f, 0.0f);
+        camera.transform.setPosition(0.0f, -500f, 1100.0f).setEular(-0.1f, 0.0f, 0.0f);
 
         Scene scene = new Scene();
         scene.setCamera(camera);
@@ -36,11 +37,21 @@ public class SceneB implements IScene {
         furina = new PhongObject("../../Model/Furina/Furina", phongMaterial);
         furina.setScale(100, 100, 100).setPosition(0, -660, 100);
 
+        SSRMaterial ssrMaterial =
+                new SSRMaterial("/shaders/ScreenSpaceRayTracing.frag", "/shaders/ScreenSpaceRayTracing.vert");
+
+        PhongObject ssrFloor = new PhongObject("/meshes/quad", ssrMaterial);
+        ssrFloor.setEular(-3.1415926f / 2, 0, 0)
+                .setScale(1500, 1500, 1500)
+                .setPosition(0, -659f, 0);
+
         sponza.setScene(scene);
         furina.setScene(scene);
+        ssrFloor.setScene(scene);
 
         scene.addObject(sponza);
         scene.addObject(furina);
+        scene.addObject(ssrFloor);
 
         light = new PointLight(
                 new Vector3(0, 0, 0),
@@ -93,5 +104,4 @@ public class SceneB implements IScene {
         rotation += 0.02f;
     }
 }
-
 

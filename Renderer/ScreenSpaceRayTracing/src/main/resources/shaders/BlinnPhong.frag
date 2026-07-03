@@ -4,6 +4,7 @@ precision mediump float;
 #endif
 
 uniform vec3 light_dir;
+uniform vec3 light_pos;
 uniform vec3 ambient_light;
 uniform vec3 light_color;
 uniform vec3 view_pos;
@@ -21,7 +22,7 @@ void main() {
     vec3 texture_color = texture(tex, texCoord).rgb;
 
     vec3 N = normalize(worldNormal);
-    vec3 L = normalize(-light_dir);
+    vec3 L = normalize(light_pos - worldVertex);
     vec3 V = normalize(view_pos - worldVertex);
     vec3 H = normalize(L + V);
 

@@ -57,8 +57,11 @@ public class GBufferMaterial extends Material {
         }
 
         if (useTex != null && useTex.isUploaded()) {
-
+            setIntToUniform("hasTexture", 1);
             setTexture("tex", useTex, 0);
+        } else {
+            setIntToUniform("hasTexture", 0);
+            setVector3ToUniform("defaultColor", new Vector3(0.45f, 0.45f, 0.45f));
         }
     }
 

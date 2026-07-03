@@ -32,7 +32,7 @@ public class Main {
     private Renderer renderer;
     private RenderContext ctx;
     private IScene currentScene;
-    private SceneType currentSceneType = SceneType.A;
+    private SceneType currentSceneType = SceneType.B;
 
     private float a = 0;
 
@@ -64,7 +64,7 @@ public class Main {
         main_camera = new Camera();
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.A);
+        setScene(SceneType.B);
     }
 
     private void draw() {
