@@ -20,8 +20,6 @@ public abstract class GameObject {
 
     MeshFilter meshFilter;
     ArrayList<MeshRenderer> meshRenderers;
-
-    // â­??¹æ? Processing globalï¼ˆä?ä¹‹å??¯ä»¥?¹æ? Scene ç®¡ï?
     public Scene scene;
 
     public GameObject() {

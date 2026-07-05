@@ -38,7 +38,8 @@ public class Main {
 
     private enum SceneType {
         A,
-        B
+        B,
+        C
     }
 
     public static void main(String[] args) {
@@ -65,7 +66,7 @@ public class Main {
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.A);
+        setScene(SceneType.C);
     }
 
     private void draw() {
@@ -115,6 +116,10 @@ public class Main {
 
             if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
                 setScene(SceneType.B);
+            }
+
+            if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+                setScene(SceneType.C);
             }
         });
 
@@ -188,8 +193,10 @@ public class Main {
 
         if (currentSceneType == SceneType.A) {
             currentScene = new SceneA();
-        } else {
+        } else if (currentSceneType == SceneType.B) {
             currentScene = new SceneB();
+        } else {
+            currentScene = new SceneC();
         }
 
         scene = currentScene.load(main_camera, WIDTH, HEIGHT);
