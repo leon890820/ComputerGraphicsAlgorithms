@@ -10,6 +10,8 @@ import org.example.engine.scene.Camera;
 
 public class PhongMaterial extends Material {
 
+    private static final int MAX_BONES = 100;
+
     Texture texture;
 
     public PhongMaterial(String frag) {
@@ -43,6 +45,13 @@ public class PhongMaterial extends Material {
 
         setMatrix4ToUniform("MVP", mvp);
         setMatrix4ToUniform("modelMatrix", model);
+
+        Matrix4[] boneMatrices = go.getBoneMatricesForSubMesh(subMesh);
+        boolean useSkinning = boneMatrices != null && boneMatrices.length > 0;
+        setIntToUniform("useSkinning", useSkinning ? 1 : 0);
+        if (useSkinning) {
+            setMatrix4ArrayToUniform("boneMatrices[0]", boneMatrices, MAX_BONES);
+        }
 
         setVector3ToUniform("ambient_light", new Vector3(0.5f,0.5f,0.5f));
 

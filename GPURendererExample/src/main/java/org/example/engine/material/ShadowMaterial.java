@@ -6,6 +6,8 @@ import org.example.engine.gameobject.GameObject;
 import  org.example.engine.light.Light;
 
 public class ShadowMaterial extends Material {
+    private static final int MAX_BONES = 100;
+
     Light lightSource;
 
     public ShadowMaterial(String frag) {
@@ -30,10 +32,20 @@ public class ShadowMaterial extends Material {
         setMatrix4ToUniform("shadowMatrix", shadowMatrix);
         setVector3ToUniform("lightPos", lightSource.transform.position);
         setFloatToUniform("lightFar", lightSource.getLightFar());
+        applySkinningUniforms(go, subMesh);
     }
 
     @Override
     public void cleanup() {
 
+    }
+
+    protected void applySkinningUniforms(GameObject go, SubMesh subMesh) {
+        Matrix4[] boneMatrices = go.getBoneMatricesForSubMesh(subMesh);
+        boolean useSkinning = boneMatrices != null && boneMatrices.length > 0;
+        setIntToUniform("useSkinning", useSkinning ? 1 : 0);
+        if (useSkinning) {
+            setMatrix4ArrayToUniform("boneMatrices[0]", boneMatrices, MAX_BONES);
+        }
     }
 }

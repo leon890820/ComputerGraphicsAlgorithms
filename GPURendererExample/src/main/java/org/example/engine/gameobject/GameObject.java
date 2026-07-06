@@ -201,6 +201,10 @@ public abstract class GameObject {
         return main_camera.Matrix().mult(localToWorld());
     }
 
+    public Matrix4[] getBoneMatricesForSubMesh(SubMesh subMesh) {
+        return null;
+    }
+
     public void buildSubMeshRenderers(Material defaultMaterial) {
         clearMeshRenderers();
 

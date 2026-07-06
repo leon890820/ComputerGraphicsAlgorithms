@@ -27,6 +27,12 @@ public class MeshRenderer {
     FloatBuffer tangentBuffer;
     float[] tangents;
 
+    IntBuffer boneIdBuffer;
+    int[] boneIds;
+
+    FloatBuffer boneWeightBuffer;
+    float[] boneWeights;
+
     IntBuffer vao;
     IntBuffer vbo;
 
@@ -37,11 +43,15 @@ public class MeshRenderer {
     private static final int VBO_NORMAL  = 1;
     private static final int VBO_TANGENT = 2;
     private static final int VBO_UV      = 3;
+    private static final int VBO_BONE_ID = 4;
+    private static final int VBO_BONE_WEIGHT = 5;
 
     private static final int ATTRIB_POS     = 0;
     private static final int ATTRIB_NORMAL  = 1;
     private static final int ATTRIB_UV      = 2;
     private static final int ATTRIB_TANGENT = 3;
+    private static final int ATTRIB_BONE_ID = 4;
+    private static final int ATTRIB_BONE_WEIGHT = 5;
 
     public MeshRenderer() {
     }
@@ -87,7 +97,7 @@ public class MeshRenderer {
         count = positions.length / 3;
 
         vao = MemoryUtil.memAllocInt(1);
-        vbo = MemoryUtil.memAllocInt(4);
+        vbo = MemoryUtil.memAllocInt(6);
 
         glGenVertexArrays(vao);
         glBindVertexArray(vao.get(0));
@@ -123,6 +133,21 @@ public class MeshRenderer {
             pushVertexAttribData(ATTRIB_TANGENT, VBO_TANGENT, tangentBuffer, tangents.length, 3, 0);
         }
 
+        if (subMesh.hasSkinWeights()) {
+            boneIds = subMesh.getTriangleBoneIds();
+            boneWeights = subMesh.getTriangleBoneWeights();
+
+            if (boneIds.length == count * 4 && boneWeights.length == count * 4) {
+                boneIdBuffer = MemoryUtil.memAllocInt(boneIds.length);
+                setIntBuffer(boneIdBuffer, boneIds);
+                pushVertexAttribIntData(ATTRIB_BONE_ID, VBO_BONE_ID, boneIdBuffer, 4);
+
+                boneWeightBuffer = allocateDirectFloatBuffer(boneWeights.length);
+                setBuffer(boneWeightBuffer, boneWeights);
+                pushVertexAttribData(ATTRIB_BONE_WEIGHT, VBO_BONE_WEIGHT, boneWeightBuffer, boneWeights.length, 4, 0);
+            }
+        }
+
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
@@ -147,7 +172,30 @@ public class MeshRenderer {
         glEnableVertexAttribArray(attribLoc);
     }
 
+    void pushVertexAttribIntData(int attribLoc, int vboIndex, IntBuffer buffer, int num) {
+        int vboId = vbo.get(vboIndex);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
+        glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
+
+        glVertexAttribIPointer(
+                attribLoc,
+                num,
+                GL_INT,
+                0,
+                0
+        );
+
+        glEnableVertexAttribArray(attribLoc);
+    }
+
     public void setBuffer(FloatBuffer buffer, float[] data) {
+        buffer.rewind();
+        buffer.put(data);
+        buffer.rewind();
+    }
+
+    public void setIntBuffer(IntBuffer buffer, int[] data) {
         buffer.rewind();
         buffer.put(data);
         buffer.rewind();
@@ -246,10 +294,22 @@ public class MeshRenderer {
             tangentBuffer = null;
         }
 
+        if (boneIdBuffer != null) {
+            MemoryUtil.memFree(boneIdBuffer);
+            boneIdBuffer = null;
+        }
+
+        if (boneWeightBuffer != null) {
+            MemoryUtil.memFree(boneWeightBuffer);
+            boneWeightBuffer = null;
+        }
+
         positions = null;
         normals = null;
         uvs = null;
         tangents = null;
+        boneIds = null;
+        boneWeights = null;
 
         count = 0;
         initialized = false;

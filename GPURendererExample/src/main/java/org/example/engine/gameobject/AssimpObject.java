@@ -1,6 +1,8 @@
 package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
+import org.example.engine.math.Matrix4;
+import org.example.engine.mesh.SubMesh;
 import org.example.engine.model.ModelAsset;
 import org.example.engine.model.adapter.ModelAssetMeshAdapter;
 import org.example.engine.model.importer.AssimpModelLoader;
@@ -17,6 +19,7 @@ public class AssimpObject extends GameObject {
     public AssimpObject(String path, Material mat) {
         modelAsset = new AssimpModelLoader().load(path);
         animator = new ModelAnimator(modelAsset);
+        animator.play("smolguraAnimationsRESOURCE");
         setMesh(new ModelAssetMeshAdapter().toMesh(modelAsset));
         buildSubMeshRenderers(mat);
     }
@@ -29,5 +32,14 @@ public class AssimpObject extends GameObject {
 
     public ModelAnimator getAnimator() {
         return animator;
+    }
+
+    @Override
+    public Matrix4[] getBoneMatricesForSubMesh(SubMesh subMesh) {
+        if (animator == null || subMesh == null || !subMesh.hasSkinWeights()) {
+            return null;
+        }
+
+        return animator.getBoneMatrices(subMesh.skinIndex);
     }
 }

@@ -19,6 +19,8 @@ public class ShadowPass extends RenderPass {
 
     public void render(RenderContext ctx, Light light) {
         ShadowBuffer.bindFrameBuffer();
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shadowMaterial.setLight(light);
         for(GameObject go : ctx.scene.getObjects()){
             go.runWithMaterial(ctx, shadowMaterial);

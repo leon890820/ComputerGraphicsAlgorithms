@@ -55,13 +55,13 @@ public class SceneC implements IScene {
 
     @Override
     public void update(float time) {
-        if (light != null) {
-            light.setPosition(
-                    (float) Math.cos(time) * 4,
-                    6f,
-                    (float) Math.sin(time) * 4
-            );
-        }
+//        if (light != null) {
+//            light.setPosition(
+//                    (float) Math.cos(time) * 4,
+//                    6f,
+//                    (float) Math.sin(time) * 4
+//            );
+//        }
 
         if (gura != null) {
             gura.updateAnimation(time);

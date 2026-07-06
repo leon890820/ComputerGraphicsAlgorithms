@@ -11,6 +11,7 @@ public class SubMesh {
     public ArrayList<Triangle> triangles = new ArrayList<>();
 
     public Texture textureKa;
+    public int skinIndex = -1;
 
     public SubMesh(String materialName) {
         this.materialName = materialName;
@@ -59,6 +60,52 @@ public class SubMesh {
                 return new Vector3(0, 0, 0);
             }
         });
+    }
+
+    public int[] getTriangleBoneIds() {
+        int[] out = new int[triangles.size() * 3 * 4];
+
+        for (int i = 0; i < triangles.size(); i++) {
+            Triangle tri = triangles.get(i);
+            for (int j = 0; j < 12; j++) {
+                out[i * 12 + j] = tri.boneIds == null ? 0 : Math.max(0, tri.boneIds[j]);
+            }
+        }
+
+        return out;
+    }
+
+    public float[] getTriangleBoneWeights() {
+        float[] out = new float[triangles.size() * 3 * 4];
+
+        for (int i = 0; i < triangles.size(); i++) {
+            Triangle tri = triangles.get(i);
+            for (int j = 0; j < 12; j++) {
+                out[i * 12 + j] = tri.boneWeights == null ? 0.0f : tri.boneWeights[j];
+            }
+        }
+
+        return out;
+    }
+
+    public boolean hasSkinWeights() {
+        if (skinIndex < 0) {
+            return false;
+        }
+
+        for (Triangle tri : triangles) {
+            if (tri == null || tri.boneWeights == null) {
+                continue;
+            }
+
+            for (float weight : tri.boneWeights) {
+                if (weight > 0.0f) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private float[] exportTriangleVectors(int componentCount, TriangleVectorGetter getter) {

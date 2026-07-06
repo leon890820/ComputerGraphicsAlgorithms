@@ -92,10 +92,21 @@ public class ModelAssetMeshAdapter {
                 }
             }
 
-            out.addTriangle(materialName, new Triangle(verts, uvs, normals, vertexIndices));
+            out.addTriangle(materialName, new Triangle(
+                    verts,
+                    uvs,
+                    normals,
+                    vertexIndices,
+                    readBoneIds(primitive, i0, i1, i2),
+                    readBoneWeights(primitive, i0, i1, i2)
+            ));
         }
 
         SubMesh subMesh = out.getSubMesh(materialName);
+        if (subMesh != null) {
+            subMesh.skinIndex = primitive.skinIndex;
+        }
+
         ModelMaterial material = getMaterial(asset, primitive.materialIndex);
         if (subMesh != null && material != null && material.baseColorTexture != null && material.baseColorTexture.isUploaded()) {
             subMesh.textureKa = material.baseColorTexture;
@@ -151,5 +162,47 @@ public class ModelAssetMeshAdapter {
                 primitive.texCoords0[base + 1],
                 0
         );
+    }
+
+    private int[] readBoneIds(ModelPrimitive primitive, int i0, int i1, int i2) {
+        int[] out = new int[12];
+        copyBoneIds(primitive, i0, out, 0);
+        copyBoneIds(primitive, i1, out, 4);
+        copyBoneIds(primitive, i2, out, 8);
+        return out;
+    }
+
+    private float[] readBoneWeights(ModelPrimitive primitive, int i0, int i1, int i2) {
+        float[] out = new float[12];
+        copyBoneWeights(primitive, i0, out, 0);
+        copyBoneWeights(primitive, i1, out, 4);
+        copyBoneWeights(primitive, i2, out, 8);
+        return out;
+    }
+
+    private void copyBoneIds(ModelPrimitive primitive, int vertexIndex, int[] out, int outBase) {
+        if (primitive.boneIds == null || primitive.boneIds.length == 0) {
+            return;
+        }
+
+        int base = vertexIndex * 4;
+        for (int i = 0; i < 4; i++) {
+            if (base + i < primitive.boneIds.length) {
+                out[outBase + i] = Math.max(0, primitive.boneIds[base + i]);
+            }
+        }
+    }
+
+    private void copyBoneWeights(ModelPrimitive primitive, int vertexIndex, float[] out, int outBase) {
+        if (primitive.boneWeights == null || primitive.boneWeights.length == 0) {
+            return;
+        }
+
+        int base = vertexIndex * 4;
+        for (int i = 0; i < 4; i++) {
+            if (base + i < primitive.boneWeights.length) {
+                out[outBase + i] = primitive.boneWeights[base + i];
+            }
+        }
     }
 }
