@@ -11,6 +11,9 @@ import org.example.engine.scene.Scene;
 public class SceneC implements IScene {
     private PointLight light;
     private MeshObject gura;
+    private MeshObject ame;
+    private MeshObject calli;
+    private MeshObject ina;
     private MeshObject rushia;
 
     @Override
@@ -30,14 +33,26 @@ public class SceneC implements IScene {
         PhongMaterial guraMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        gura = new MeshObject("../Model/GuraAnim/gura.glb", guraMaterial);
+        gura = new MeshObject("../Model/Hololive/gura.glb", guraMaterial);
         gura.playAnimation("smolguraAnimationsRESOURCE");
         gura.setScale(1f, 1f, 1f)
-                .setPosition(0, 0, 0);
+                .setPosition(-1, 0, 0);
 
-        rushia = new MeshObject("../Model/Rushia/rushia.glb", guraMaterial);
-        rushia.playAnimation("idle");
-        rushia.setPosition(2,0,0).setScale(0.2f,0.2f,0.2f);
+        ame = new MeshObject("../Model/Hololive/ame.glb", guraMaterial);
+        ame.playAnimation("smolameAnimationsRESOURCE");
+        ame.setPosition(1f, 0f, 0f).setScale(3f, 3f, 3f);
+
+        calli = new MeshObject("../Model/Hololive/calli.glb", guraMaterial);
+        calli.playAnimation("smolcalliAnimationsRESOURCE");
+        calli.setPosition(3f, 0f, 0f).setScale(1f, 1f, 1f);
+
+        ina = new MeshObject("../Model/Hololive/ina.glb", guraMaterial);
+        ina.playAnimation("smolinaAnimationsRESOURCE");
+        ina.setPosition(-3f, 0f, 0f).setScale(3f, 3f, 3f);
+
+//        rushia = new MeshObject("../Model/Rushia/rushia.glb", guraMaterial);
+//        rushia.playAnimation("idle");
+//        rushia.setPosition(2,0,0).setScale(0.5f,0.5f,0.5f);
 
         PhongMaterial floorMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
@@ -49,12 +64,16 @@ public class SceneC implements IScene {
                 .setPosition(0, -0.05f, 0);
 
         gura.setScene(scene);
+        ame.setScene(scene);
+        calli.setScene(scene);
+        ina.setScene(scene);
         floor.setScene(scene);
-        rushia.setScene((scene));
 
         scene.addObject(gura);
+        scene.addObject(ame);
+        scene.addObject(calli);
+        scene.addObject(ina);
         scene.addObject(floor);
-        scene.addObject(rushia);
         scene.addLight(light);
 
 
@@ -71,9 +90,10 @@ public class SceneC implements IScene {
 //            );
 //        }
 
-        if (gura != null) {
-            gura.updateAnimation(time);
-        }
+        gura.updateAnimation(time);
+        ina.updateAnimation(time);
+        calli.updateAnimation(time);
+        ame.updateAnimation(time);
     }
 
     @Override
