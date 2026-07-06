@@ -2,11 +2,12 @@ package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
 import org.example.engine.mesh.Mesh;
-import org.example.engine.mesh.MeshFilter;
-import org.example.engine.mesh.MeshRenderer;
+import org.example.engine.component.MeshFilter;
+import org.example.engine.component.MeshRenderer;
 import org.example.engine.mesh.SubMesh;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
+import org.example.engine.component.Animator;
 import org.example.engine.render.RenderContext;
 import org.example.engine.scene.Scene;
 import org.example.engine.scene.Transform;
@@ -20,6 +21,7 @@ public abstract class GameObject {
 
     MeshFilter meshFilter;
     ArrayList<MeshRenderer> meshRenderers;
+    Animator animator;
     public Scene scene;
 
     public GameObject() {
@@ -80,6 +82,35 @@ public abstract class GameObject {
             meshFilter.setMesh(m);
         }
         return this;
+    }
+
+    public MeshFilter getMeshFilter() {
+        return meshFilter;
+    }
+
+    public GameObject setAnimator(Animator animator) {
+        this.animator = animator;
+        return this;
+    }
+
+    public Animator getAnimator() {
+        return animator;
+    }
+
+    public boolean hasAnimator() {
+        return animator != null;
+    }
+
+    public void playAnimation(String animationName) {
+        if (animator != null) {
+            animator.play(animationName);
+        }
+    }
+
+    public void updateAnimation(float time) {
+        if (animator != null) {
+            animator.updateAbsolute(time);
+        }
     }
 
     public GameObject setName(String s) {
@@ -202,7 +233,11 @@ public abstract class GameObject {
     }
 
     public Matrix4[] getBoneMatricesForSubMesh(SubMesh subMesh) {
-        return null;
+        if (animator == null || subMesh == null || !subMesh.hasSkinWeights()) {
+            return null;
+        }
+
+        return animator.getBoneMatrices(subMesh.skinIndex);
     }
 
     public void buildSubMeshRenderers(Material defaultMaterial) {
@@ -214,6 +249,7 @@ public abstract class GameObject {
         }
 
         Mesh mesh = meshFilter.getMesh();
+        mesh.finishBuild();
         ArrayList<SubMesh> subs = mesh.getAllSubMeshes();
 
         for (SubMesh sub : subs) {

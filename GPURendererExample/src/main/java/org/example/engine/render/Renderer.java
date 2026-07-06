@@ -4,7 +4,7 @@ import org.example.engine.light.DirectionalLight;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.light.SpotLight;
-import org.example.engine.rendererPass.*;
+import org.example.engine.render.pass.*;
 
 public class Renderer {
     private static final int SHADOW_SIZE = 1024;

@@ -1,7 +1,6 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.AssimpObject;
-import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gameobject.MeshObject;
 import org.example.engine.gl.Texture;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PhongMaterial;
@@ -11,7 +10,7 @@ import org.example.engine.scene.Scene;
 
 public class SceneC implements IScene {
     private PointLight light;
-    private AssimpObject gura;
+    private MeshObject gura;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -30,7 +29,8 @@ public class SceneC implements IScene {
         PhongMaterial guraMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        gura = new AssimpObject("../Model/GuraAnim/gura.glb", guraMaterial);
+        gura = new MeshObject("../Model/GuraAnim/gura.glb", guraMaterial);
+        gura.playAnimation("smolguraAnimationsRESOURCE");
         gura.setScale(1f, 1f, 1f)
                 .setPosition(0, 0, 0);
 
@@ -38,7 +38,7 @@ public class SceneC implements IScene {
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
         floorMaterial.setTexture(new Texture("/textures/Floor.png"));
 
-        PhongObject floor = new PhongObject("/meshes/quad", floorMaterial);
+        MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);
         floor.setEular(3.1415926f / 2, 0, 0)
                 .setScale(5, 5, 5)
                 .setPosition(0, -0.05f, 0);
