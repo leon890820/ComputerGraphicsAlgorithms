@@ -1,7 +1,7 @@
 package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
-import org.example.engine.mesh.ObjLoader;
+import org.example.engine.importer.ObjLoader;
 
 public class Quad extends GameObject {
 

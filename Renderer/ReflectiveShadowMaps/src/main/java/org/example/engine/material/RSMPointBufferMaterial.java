@@ -25,6 +25,7 @@ public class RSMPointBufferMaterial extends RSMBufferMaterial {
         Matrix4 model = go.localToWorld();
         setMatrix4ToUniform("modelMatrix", model);
         setMatrix4ToUniform("lightVPMatrix", shadowMatrix);
+        applySkinning(go, subMesh);
         setVector3ToUniform("lightPos", lightSource.transform.position);
         setFloatToUniform("lightFar", lightSource.getLightFar());
         if (subMesh != null && subMesh.textureKa != null && subMesh.textureKa.isUploaded()) {

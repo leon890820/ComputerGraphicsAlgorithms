@@ -18,6 +18,8 @@ import static org.lwjgl.opengl.GL33.*;
 
 public abstract class Material {
 
+    protected static final int MAX_BONES = 100;
+
     public Shader shader;
 
     private final HashMap<String, Integer> uniformCache = new HashMap<>();
@@ -95,6 +97,23 @@ public abstract class Material {
         glUniformMatrix4fv(location, false, writeMatrixToBuffer(m));
     }
 
+    public void setMatrix4ArrayToUniform(String name, Matrix4[] matrices, int maxCount) {
+        int location = getUniformLocation(name);
+        if (location < 0 || matrices == null || matrices.length == 0 || maxCount <= 0) return;
+
+        int count = Math.min(matrices.length, maxCount);
+        FloatBuffer buffer = MemoryUtil.memAllocFloat(count * 16);
+
+        for (int i = 0; i < count; i++) {
+            Matrix4 matrix = matrices[i] == null ? Matrix4.Identity() : matrices[i];
+            buffer.put(matrix.m);
+        }
+
+        buffer.rewind();
+        glUniformMatrix4fv(location, false, buffer);
+        MemoryUtil.memFree(buffer);
+    }
+
     public void setVector4ToUniform(String name, float x, float y, float z, float w) {
         int location = getUniformLocation(name);
         if (location < 0) return;
@@ -133,6 +152,15 @@ public abstract class Material {
         if (location < 0) return;
 
         glUniform1i(location, x);
+    }
+
+    protected void applySkinning(GameObject go, SubMesh subMesh) {
+        Matrix4[] boneMatrices = go == null ? null : go.getBoneMatricesForSubMesh(subMesh);
+        boolean useSkinning = boneMatrices != null && boneMatrices.length > 0;
+        setIntToUniform("useSkinning", useSkinning ? 1 : 0);
+        if (useSkinning) {
+            setMatrix4ArrayToUniform("boneMatrices[0]", boneMatrices, MAX_BONES);
+        }
     }
 
     public void clearUniformCache() {

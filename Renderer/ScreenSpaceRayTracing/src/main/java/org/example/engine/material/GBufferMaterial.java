@@ -50,6 +50,7 @@ public class GBufferMaterial extends Material {
         setMatrix4ToUniform("MVP", mvp);
         setMatrix4ToUniform("modelMatrix", model);
         setMatrix4ToUniform("u_ViewMatrix", V);
+        applySkinning(go, subMesh);
 
         setVector3ToUniform("ambient_light", new Vector3(0.5f,0.5f,0.5f));
         setVector3ToUniform("cameraPos", camera.transform.position);

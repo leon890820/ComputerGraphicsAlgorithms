@@ -1,13 +1,18 @@
-package org.example.engine.mesh;
+package org.example.engine.importer;
 
 import org.example.engine.gl.Texture;
-import org.example.engine.mesh.MtlMaterial;
+import org.example.engine.asset.material.MtlMaterial;
+import org.example.engine.mesh.Mesh;
+import org.example.engine.mesh.SubMesh;
+import org.example.engine.mesh.Triangle;
+
 import org.example.engine.math.Vector3;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class ObjLoader {
 
@@ -76,8 +81,8 @@ public class ObjLoader {
             } else if (line.startsWith("f ")) {
                 parseFace(s);
             } else if (line.startsWith("mtllib ")) {
-                mesh.mtllibName = line.substring(7).trim();
-                loadMtlFile(fname, mesh.mtllibName);
+                mesh.setMtllibName(line.substring(7).trim());
+                loadMtlFile(fname, mesh.getMtllibName());
             }
         }
 
@@ -216,7 +221,7 @@ public class ObjLoader {
                 String name = line.substring(7).trim();
                 current = new MtlMaterial();
                 current.name = name;
-                mesh.mtlMaterials.put(name, current);
+                mesh.putMtlMaterial(name, current);
             } else if (current != null && line.startsWith("map_Ka ")) {
                 current.mapKa = line.substring(7).trim();
             } else if (current != null && line.startsWith("map_Kd ")) {
@@ -256,16 +261,17 @@ public class ObjLoader {
             }
         }
 
-        System.out.println("[ObjLoader] loaded mtl: " + mtlPath + ", material count = " + mesh.mtlMaterials.size());
+        System.out.println("[ObjLoader] loaded mtl: " + mtlPath + ", material count = " + mesh.getMtlMaterialCount());
     }
 
     private void assignTexturesToSubMeshes() {
-        if (mesh.subMeshes == null || mesh.subMeshes.size() == 0) return;
-        if (mesh.mtlMaterials == null || mesh.mtlMaterials.size() == 0) return;
+        Map<String, SubMesh> subMeshes = mesh.getSubMeshMap();
+        if (subMeshes == null || subMeshes.size() == 0) return;
+        if (!mesh.hasMtlMaterials()) return;
 
-        for (String name : mesh.subMeshes.keySet()) {
-            SubMesh sub = mesh.subMeshes.get(name);
-            MtlMaterial m = mesh.mtlMaterials.get(name);
+        for (String name : subMeshes.keySet()) {
+            SubMesh sub = subMeshes.get(name);
+            MtlMaterial m = mesh.getMtlMaterial(name);
 
             if (sub == null || m == null) continue;
 
@@ -318,7 +324,6 @@ public class ObjLoader {
 
             ArrayList<String> lines = new ArrayList<>();
 
-            // ===== 先走 resource =====
             if (input != null) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
                     String line;
@@ -329,7 +334,6 @@ public class ObjLoader {
                 return lines.toArray(new String[0]);
             }
 
-            // ===== fallback：走檔案系統 =====
             java.io.File file = new java.io.File(path);
 
             System.out.println("[ObjLoader] Resource not found, try file:");

@@ -14,7 +14,6 @@ public abstract class Light extends GameObject {
     protected boolean castShadow = true;
     protected Vector3 up = new Vector3(0, 1, 0);
 
-    // ===== Projection params（統一存在 base）=====
     protected float fov, aspect, near, far;
     protected float left, right, bottom, top;
 
@@ -74,7 +73,6 @@ public abstract class Light extends GameObject {
         return this;
     }
 
-    // ===== 共用 helper（給子類用）=====
     protected Matrix4 buildProjectionMatrix() {
         if (usePerspective) {
             return Matrix4.Perspective(fov, aspect, near, far);
@@ -88,7 +86,6 @@ public abstract class Light extends GameObject {
         return Matrix4.Identity();
     }
 
-    // ===== 抽象（維持原接口）=====
     public abstract Matrix4 getProjectionMatrix();
 
     public abstract void setShaderParameter(LightMaterial material);

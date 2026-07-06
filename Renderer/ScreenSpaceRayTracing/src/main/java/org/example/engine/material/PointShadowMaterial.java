@@ -25,6 +25,7 @@ public class PointShadowMaterial extends ShadowMaterial {
         Matrix4 model = go.localToWorld();
         setMatrix4ToUniform("modelMatrix", model);
         setMatrix4ToUniform("shadowMatrix", shadowMatrix);
+        applySkinning(go, subMesh);
         setVector3ToUniform("lightPos", lightSource.transform.position);
         setFloatToUniform("lightFar", lightSource.getLightFar());
 

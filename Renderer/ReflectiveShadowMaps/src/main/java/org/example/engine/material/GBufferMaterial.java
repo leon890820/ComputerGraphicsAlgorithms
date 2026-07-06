@@ -35,6 +35,7 @@ public class GBufferMaterial extends Material {
         setMatrix4ToUniform("modelMatrix", model);
         setMatrix4ToUniform("viewMatrix", view);
         setMatrix4ToUniform("projectMatrix", project);
+        applySkinning(go, subMesh);
 
         if (subMesh != null && subMesh.textureKa != null && subMesh.textureKa.isUploaded()) {
             setTexture("tex", subMesh.textureKa, 0);

@@ -23,13 +23,13 @@ public class RSMPointBufferPass extends RenderPass{
         glEnable(GL_DEPTH_TEST);
         for (int face = 0; face < 6; face++) {
             ShadowBuffer.bindFace(face);
-            glClear(GL_DEPTH_BUFFER_BIT); // ⭐ 必加
+            glClear(GL_DEPTH_BUFFER_BIT);
             rsmPointBufferMaterial.setShadowMatrix(shadowMatrices[face]);
             for(GameObject go : ctx.scene.getObjects()){
                 go.runWithMaterial(ctx, rsmPointBufferMaterial);
             }
         }
-        ShadowBuffer.unbind(ctx.screenWidth, ctx.screenHeight); // ⭐ 必加
+        ShadowBuffer.unbind(ctx.screenWidth, ctx.screenHeight);
     }
 
     public RSMCubeBuffer getRSMBuffer(){

@@ -1,4 +1,6 @@
-package org.example.engine.mesh;
+package org.example.engine.component;
+
+import org.example.engine.mesh.Mesh;
 
 public class MeshFilter {
 

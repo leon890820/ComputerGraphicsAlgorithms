@@ -43,6 +43,7 @@ public class PhongMaterial extends Material {
 
         setMatrix4ToUniform("MVP", mvp);
         setMatrix4ToUniform("modelMatrix", model);
+        applySkinning(go, subMesh);
 
         setVector3ToUniform("ambient_light", new Vector3(0.5f,0.5f,0.5f));
 

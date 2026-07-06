@@ -1,5 +1,6 @@
 package org.example.scenes;
 
+import org.example.engine.gameobject.AssimpObject;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.gameobject.PhongObject;
 import org.example.engine.gl.Texture;
@@ -19,7 +20,7 @@ public class SceneB implements IScene {
     private final float speed = 200.0f;
     private float rotation = 0.0f;
 
-    private PhongObject furina;
+    private AssimpObject gura;
     private Light light;
 
     @Override
@@ -35,15 +36,16 @@ public class SceneB implements IScene {
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
         PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza", phongMaterial);
-        furina = new PhongObject("../../Model/Furina/Furina", phongMaterial);
-        furina.setScale(100, 100, 100).setPosition(0, -660, 100);
+        gura = new AssimpObject("../../Model/GuraAnim/gura.glb", phongMaterial);
+        gura.playAnimation("ParadeWalk");
+        gura.setScale(50, 50, 50).setPosition(0, -660, 100);
 
         SSRMaterial ssrMaterial =
                 new SSRMaterial("/shaders/ScreenSpaceRayTracing.frag", "/shaders/ScreenSpaceRayTracing.vert");
         ssrMaterial
                 .setNormalMap(new Texture("/textures/Wall03_Normal.jpg"))
-                .setFuzz(0.05f)
-                .setFuzzySampleCount(8);
+                .setFuzz(0.0f)
+                .setFuzzySampleCount(1);
 
         PhongObject ssrFloor = new PhongObject("/meshes/quad", ssrMaterial);
         ssrFloor.setEular(-3.1415926f / 2, 0, 0)
@@ -51,11 +53,11 @@ public class SceneB implements IScene {
                 .setPosition(0, -659f, 0);
 
         sponza.setScene(scene);
-        furina.setScene(scene);
+        gura.setScene(scene);
         ssrFloor.setScene(scene);
 
         scene.addObject(sponza);
-        scene.addObject(furina);
+        scene.addObject(gura);
         scene.addObject(ssrFloor);
 
         light = new PointLight(
@@ -72,8 +74,9 @@ public class SceneB implements IScene {
 
     @Override
     public void update(float time) {
-        if (furina != null) {
-            updateFurinaMovement(furina, 0.016f);
+        if (gura != null) {
+            gura.updateAnimation(time);
+            updateFurinaMovement(gura, 0.016f);
         }
     }
 
@@ -105,7 +108,7 @@ public class SceneB implements IScene {
             furina.setPosition(pos.add(dir.mult(step)));
         }
 
-        furina.setEular(0, rotation, 0);
+        //furina.setEular(0, rotation, 0);
         rotation += 0.02f;
     }
 }

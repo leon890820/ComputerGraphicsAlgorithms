@@ -13,7 +13,6 @@ public class Shader {
 
     // ===== Constructor =====
 
-    // fragment only（你原本有這個接口）
     public Shader(String fragPath) {
         this("/shaders/default.vert", fragPath);
     }

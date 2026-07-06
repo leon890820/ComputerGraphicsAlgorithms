@@ -31,7 +31,6 @@ uniform int   u_RSMSize;
 uniform int   u_VPLNum;
 uniform float lightFar;
 
-// 0 = 關閉 RSM indirect, 1 = 開啟
 uniform int RTX;
 
 in vec2 texCoord;

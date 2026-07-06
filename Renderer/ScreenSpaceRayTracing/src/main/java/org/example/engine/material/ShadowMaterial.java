@@ -28,6 +28,7 @@ public class ShadowMaterial extends Material {
         Matrix4 shadowMatrix = lightSource.getProjectionMatrix().mult(lightSource.getViewMatrix());
         setMatrix4ToUniform("modelMatrix", model);
         setMatrix4ToUniform("shadowMatrix", shadowMatrix);
+        applySkinning(go, subMesh);
         setVector3ToUniform("lightPos", lightSource.transform.position);
         setFloatToUniform("lightFar", lightSource.getLightFar());
     }

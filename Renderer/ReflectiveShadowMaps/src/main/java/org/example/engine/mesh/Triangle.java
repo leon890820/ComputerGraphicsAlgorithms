@@ -11,20 +11,33 @@ public class Triangle {
     public Vector3[] uvs;
     public Vector3[] normals;
     public Vector3[] tangents;
+    public int[] boneIds;
+    public float[] boneWeights;
 
-    // shared vertex index（給 smooth normal 用）
     public int[] vertexIndices;
 
     public Vector3 center;
 
     public Triangle(Vector3[] verts, Vector3[] uvs, Vector3[] normals, int[] vertexIndices) {
+        this(verts, uvs, normals, vertexIndices, null, null);
+    }
+
+    public Triangle(
+            Vector3[] verts,
+            Vector3[] uvs,
+            Vector3[] normals,
+            int[] vertexIndices,
+            int[] boneIds,
+            float[] boneWeights
+    ) {
         this.verts = verts;
         this.uvs = uvs;
         this.normals = normals;
         this.vertexIndices = vertexIndices;
+        this.boneIds = boneIds != null && boneIds.length == 12 ? boneIds : new int[12];
+        this.boneWeights = boneWeights != null && boneWeights.length == 12 ? boneWeights : new float[12];
 
-        // 中心點
-        this.center = (verts[0].add(verts[1]).add(verts[2])).mult(1.0f / 3.0f);
+        this.center = verts[0].add(verts[1]).add(verts[2]).mult(1.0f / 3.0f);
 
         calculateTangent();
     }
@@ -37,13 +50,11 @@ public class Triangle {
                     ? normals[i]
                     : new Vector3(0, 1, 0);
 
-            // 簡單 fallback tangent（你原本寫法）
             tangents[i] = new Vector3(-n.z, 0.0f, n.x);
         }
     }
 
     public boolean intersection(Vector3 o, Vector3 dir, Matrix4 ltw) {
-
         Vector3 v0 = ltw.transformPoint(verts[0]);
         Vector3 v1 = ltw.transformPoint(verts[1]);
         Vector3 v2 = ltw.transformPoint(verts[2]);
@@ -56,8 +67,6 @@ public class Triangle {
         Vector3 s2 = Vector3.cross(s, e1);
 
         float denom = Vector3.dot(s1, e1);
-
-        // ⭐ 防止除0 crash（你原本沒檢查）
         if (Math.abs(denom) < 1e-8f) return false;
 
         float inv = 1.0f / denom;

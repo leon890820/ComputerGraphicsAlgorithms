@@ -11,6 +11,7 @@ import org.example.engine.scene.Scene;
 public class SceneC implements IScene {
     private PointLight light;
     private MeshObject gura;
+    private MeshObject rushia;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -34,6 +35,10 @@ public class SceneC implements IScene {
         gura.setScale(1f, 1f, 1f)
                 .setPosition(0, 0, 0);
 
+        rushia = new MeshObject("../Model/Rushia/rushia.glb", guraMaterial);
+        rushia.playAnimation("idle");
+        rushia.setPosition(2,0,0).setScale(0.2f,0.2f,0.2f);
+
         PhongMaterial floorMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
         floorMaterial.setTexture(new Texture("/textures/Floor.png"));
@@ -45,10 +50,13 @@ public class SceneC implements IScene {
 
         gura.setScene(scene);
         floor.setScene(scene);
+        rushia.setScene((scene));
 
         scene.addObject(gura);
         scene.addObject(floor);
+        scene.addObject(rushia);
         scene.addLight(light);
+
 
         return scene;
     }

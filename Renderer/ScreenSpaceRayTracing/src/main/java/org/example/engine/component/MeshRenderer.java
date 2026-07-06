@@ -1,6 +1,7 @@
-package org.example.engine.mesh;
+package org.example.engine.component;
 
 import org.example.engine.material.Material;
+import org.example.engine.mesh.SubMesh;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.render.RenderContext;
 import org.lwjgl.system.MemoryUtil;
@@ -27,8 +28,18 @@ public class MeshRenderer {
     FloatBuffer tangentBuffer;
     float[] tangents;
 
+    IntBuffer boneIdBuffer;
+    int[] boneIds;
+
+    FloatBuffer boneWeightBuffer;
+    float[] boneWeights;
+
+    IntBuffer indexBuffer;
+    int[] indices;
+
     IntBuffer vao;
     IntBuffer vbo;
+    IntBuffer ebo;
 
     int count = 0;
     boolean initialized = false;
@@ -37,11 +48,15 @@ public class MeshRenderer {
     private static final int VBO_NORMAL  = 1;
     private static final int VBO_TANGENT = 2;
     private static final int VBO_UV      = 3;
+    private static final int VBO_BONE_ID = 4;
+    private static final int VBO_BONE_WEIGHT = 5;
 
     private static final int ATTRIB_POS     = 0;
     private static final int ATTRIB_NORMAL  = 1;
     private static final int ATTRIB_UV      = 2;
     private static final int ATTRIB_TANGENT = 3;
+    private static final int ATTRIB_BONE_ID = 4;
+    private static final int ATTRIB_BONE_WEIGHT = 5;
 
     public MeshRenderer() {
     }
@@ -78,21 +93,29 @@ public class MeshRenderer {
             dispose();
         }
 
-        positions = subMesh.getTrianglePosition();
+        positions = subMesh.positions;
         if (positions == null || positions.length == 0) {
             System.out.println("[MeshRenderer] initialize failed: positions is empty, subMesh = " + subMesh.materialName);
             return;
         }
 
-        count = positions.length / 3;
+        indices = subMesh.indices;
+        if (indices == null || indices.length == 0) {
+            System.out.println("[MeshRenderer] initialize failed: indices is empty, subMesh = " + subMesh.materialName);
+            return;
+        }
+
+        count = indices.length;
 
         vao = MemoryUtil.memAllocInt(1);
-        vbo = MemoryUtil.memAllocInt(4);
+        vbo = MemoryUtil.memAllocInt(6);
+        ebo = MemoryUtil.memAllocInt(1);
 
         glGenVertexArrays(vao);
         glBindVertexArray(vao.get(0));
 
         glGenBuffers(vbo);
+        glGenBuffers(ebo);
 
         // Position
         posBuffer = allocateDirectFloatBuffer(positions.length);
@@ -100,7 +123,7 @@ public class MeshRenderer {
         pushVertexAttribData(ATTRIB_POS, VBO_POS, posBuffer, positions.length, 3, 0);
 
         // Normal
-        normals = subMesh.getTriangleNormal();
+        normals = subMesh.normals;
         if (normals != null && normals.length > 0) {
             normalBuffer = allocateDirectFloatBuffer(normals.length);
             setBuffer(normalBuffer, normals);
@@ -108,7 +131,7 @@ public class MeshRenderer {
         }
 
         // UV
-        uvs = subMesh.getTriangleUV();
+        uvs = subMesh.uvs;
         if (uvs != null && uvs.length > 0) {
             uvBuffer = allocateDirectFloatBuffer(uvs.length);
             setBuffer(uvBuffer, uvs);
@@ -116,12 +139,33 @@ public class MeshRenderer {
         }
 
         // Tangent
-        tangents = subMesh.getTriangleTangent();
+        tangents = subMesh.tangents;
         if (tangents != null && tangents.length > 0) {
             tangentBuffer = allocateDirectFloatBuffer(tangents.length);
             setBuffer(tangentBuffer, tangents);
             pushVertexAttribData(ATTRIB_TANGENT, VBO_TANGENT, tangentBuffer, tangents.length, 3, 0);
         }
+
+        if (subMesh.hasSkinWeights()) {
+            boneIds = subMesh.boneIds;
+            boneWeights = subMesh.boneWeights;
+
+            int vertexCount = positions.length / 3;
+            if (boneIds.length == vertexCount * 4 && boneWeights.length == vertexCount * 4) {
+                boneIdBuffer = MemoryUtil.memAllocInt(boneIds.length);
+                setIntBuffer(boneIdBuffer, boneIds);
+                pushVertexAttribIntData(ATTRIB_BONE_ID, VBO_BONE_ID, boneIdBuffer, 4);
+
+                boneWeightBuffer = allocateDirectFloatBuffer(boneWeights.length);
+                setBuffer(boneWeightBuffer, boneWeights);
+                pushVertexAttribData(ATTRIB_BONE_WEIGHT, VBO_BONE_WEIGHT, boneWeightBuffer, boneWeights.length, 4, 0);
+            }
+        }
+
+        indexBuffer = MemoryUtil.memAllocInt(indices.length);
+        setIntBuffer(indexBuffer, indices);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.get(0));
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -147,7 +191,30 @@ public class MeshRenderer {
         glEnableVertexAttribArray(attribLoc);
     }
 
+    void pushVertexAttribIntData(int attribLoc, int vboIndex, IntBuffer buffer, int num) {
+        int vboId = vbo.get(vboIndex);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
+        glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
+
+        glVertexAttribIPointer(
+                attribLoc,
+                num,
+                GL_INT,
+                0,
+                0
+        );
+
+        glEnableVertexAttribArray(attribLoc);
+    }
+
     public void setBuffer(FloatBuffer buffer, float[] data) {
+        buffer.rewind();
+        buffer.put(data);
+        buffer.rewind();
+    }
+
+    public void setIntBuffer(IntBuffer buffer, int[] data) {
         buffer.rewind();
         buffer.put(data);
         buffer.rewind();
@@ -176,7 +243,7 @@ public class MeshRenderer {
         useMat.run(ctx, go, subMesh);
 
         glBindVertexArray(vao.get(0));
-        glDrawArrays(GL_TRIANGLES, 0, count);
+        glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         useMat.cleanup();
@@ -206,7 +273,7 @@ public class MeshRenderer {
         useMat.run(ctx, go, subMesh);
 
         glBindVertexArray(vao.get(0));
-        glDrawArrays(GL_LINES, 0, count);
+        glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         useMat.cleanup();
@@ -224,6 +291,12 @@ public class MeshRenderer {
             glDeleteVertexArrays(vao);
             MemoryUtil.memFree(vao);
             vao = null;
+        }
+
+        if (ebo != null) {
+            glDeleteBuffers(ebo);
+            MemoryUtil.memFree(ebo);
+            ebo = null;
         }
 
         if (posBuffer != null) {
@@ -246,10 +319,28 @@ public class MeshRenderer {
             tangentBuffer = null;
         }
 
+        if (boneIdBuffer != null) {
+            MemoryUtil.memFree(boneIdBuffer);
+            boneIdBuffer = null;
+        }
+
+        if (boneWeightBuffer != null) {
+            MemoryUtil.memFree(boneWeightBuffer);
+            boneWeightBuffer = null;
+        }
+
+        if (indexBuffer != null) {
+            MemoryUtil.memFree(indexBuffer);
+            indexBuffer = null;
+        }
+
         positions = null;
         normals = null;
         uvs = null;
         tangents = null;
+        boneIds = null;
+        boneWeights = null;
+        indices = null;
 
         count = 0;
         initialized = false;

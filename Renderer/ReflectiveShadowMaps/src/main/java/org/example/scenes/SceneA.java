@@ -33,7 +33,8 @@ public class SceneA implements IScene {
         scene.setCamera(camera);
 
         PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza", null);
-        furina = new PhongObject("../../Model/Furina/Furina", null);
+        furina = new PhongObject("../../Model/GuraAnim/gura.glb", null);
+        furina.playAnimation("smolguraAnimationsRESOURCE");
         furina.setScale(100, 100, 100).setPosition(0, -660, 100);
 
         sponza.setScene(scene);
@@ -58,6 +59,7 @@ public class SceneA implements IScene {
     @Override
     public void update(float time) {
         if (furina != null) {
+            furina.updateAnimation(time);
             updateFurinaMovement(furina, 0.016f);
         }
     }

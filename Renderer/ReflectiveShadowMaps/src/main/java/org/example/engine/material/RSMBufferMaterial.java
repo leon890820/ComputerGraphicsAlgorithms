@@ -20,6 +20,7 @@ public class RSMBufferMaterial extends Material {
 
         setMatrix4ToUniform("modelMatrix", model);
         setMatrix4ToUniform("lightVPMatrix", lightProject.mult(lightView));
+        applySkinning(go, subMesh);
 
         setVector3ToUniform("lightPos", lightSource.getPosition());
         setFloatToUniform("lightFar", lightSource.getLightFar());

@@ -43,7 +43,6 @@ public class Scene {
         return camera;
     }
 
-    // ===== optional（之後會用到）=====
 
     public void clear() {
         objects.clear();
