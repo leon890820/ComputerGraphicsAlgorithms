@@ -64,7 +64,7 @@ public class SceneC implements IScene {
         }
 
         if (gura != null) {
-            //gura.setEular(0, time * 0.25f, 0);
+            gura.updateAnimation(time);
         }
     }
 
