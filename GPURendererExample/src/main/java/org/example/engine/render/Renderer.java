@@ -12,8 +12,8 @@ public class Renderer {
     private final ShadowPass shadowPass;
     private final PointShadowPass pointShadowPass;
     private final GBufferPass gBufferPass;
-    private final SpotScenePass spotScenePass;
-    private final DirectionalScenePass directionalScenePass;
+    private final ScenePass spotScenePass;
+    private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
 
 
@@ -21,8 +21,8 @@ public class Renderer {
         shadowPass = new ShadowPass(SHADOW_SIZE);
         pointShadowPass = new PointShadowPass(SHADOW_SIZE);
         gBufferPass = new GBufferPass(screenWidth, screenHeight);
-        spotScenePass = new SpotScenePass();
-        directionalScenePass = new DirectionalScenePass();
+        spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
+        directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
     }
 

@@ -14,7 +14,6 @@ public class SceneC implements IScene {
     private MeshObject ame;
     private MeshObject calli;
     private MeshObject ina;
-    private MeshObject rushia;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -50,10 +49,6 @@ public class SceneC implements IScene {
         ina.playAnimation("smolinaAnimationsRESOURCE");
         ina.setPosition(-3f, 0f, 0f).setScale(3f, 3f, 3f);
 
-//        rushia = new MeshObject("../Model/Rushia/rushia.glb", guraMaterial);
-//        rushia.playAnimation("idle");
-//        rushia.setPosition(2,0,0).setScale(0.5f,0.5f,0.5f);
-
         PhongMaterial floorMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
         floorMaterial.setTexture(new Texture("/textures/Floor.png"));
@@ -76,14 +71,6 @@ public class SceneC implements IScene {
 
     @Override
     public void update(float time) {
-//        if (light != null) {
-//            light.setPosition(
-//                    (float) Math.cos(time) * 4,
-//                    6f,
-//                    (float) Math.sin(time) * 4
-//            );
-//        }
-
         gura.updateAnimation(time);
         ina.updateAnimation(time);
         calli.updateAnimation(time);

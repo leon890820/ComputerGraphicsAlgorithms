@@ -275,8 +275,6 @@ public abstract class GameObject {
             mr.initialize();
             meshRenderers.add(mr);
         }
-
-        System.out.println("[GameObject] buildSubMeshRenderers success: " + meshRenderers.size());
     }
 
     public void setMaterial(Material mat) {

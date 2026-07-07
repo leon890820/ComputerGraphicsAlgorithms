@@ -84,7 +84,7 @@ public class MeshRenderer {
 
     public void initialize() {
         if (subMesh == null) {
-            System.out.println("[MeshRenderer] initialize failed: subMesh or gameObject is null");
+            System.out.println("[MeshRenderer] initialize failed: subMesh is null");
             return;
         }
 
