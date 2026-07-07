@@ -19,8 +19,13 @@ abstract public class ScenePass extends RenderPass {
                 .setNormalTex(gBuffer.normal)
                 .setPositionTex(gBuffer.position)
                 .setDepthTex(shadowDepth);
-        lightMaterial.setLight(light);
-        Camera camera = ctx.camera;
-        camera.runWithMaterial(ctx, lightMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            Camera camera = ctx.camera;
+            camera.runWithMaterial(ctx, lightMaterial);
+        } finally {
+            ctx.activeLight = previousLight;
+        }
     }
 }

@@ -63,12 +63,6 @@ public class SceneC implements IScene {
                 .setScale(10, 10, 10)
                 .setPosition(0, -0.05f, 0);
 
-        gura.setScene(scene);
-        ame.setScene(scene);
-        calli.setScene(scene);
-        ina.setScene(scene);
-        floor.setScene(scene);
-
         scene.addObject(gura);
         scene.addObject(ame);
         scene.addObject(calli);

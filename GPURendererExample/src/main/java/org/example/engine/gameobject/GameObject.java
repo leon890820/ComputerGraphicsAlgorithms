@@ -1,6 +1,8 @@
 package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
+import org.example.engine.material.MaterialRenderData;
+import org.example.engine.light.Light;
 import org.example.engine.mesh.Mesh;
 import org.example.engine.component.MeshFilter;
 import org.example.engine.component.MeshRenderer;
@@ -9,7 +11,7 @@ import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
 import org.example.engine.component.Animator;
 import org.example.engine.render.RenderContext;
-import org.example.engine.scene.Scene;
+import org.example.engine.resource.ResourceDisposalContext;
 import org.example.engine.scene.Transform;
 
 import java.util.ArrayList;
@@ -22,16 +24,10 @@ public abstract class GameObject {
     MeshFilter meshFilter;
     ArrayList<MeshRenderer> meshRenderers;
     Animator animator;
-    public Scene scene;
 
     public GameObject() {
         transform = new Transform();
         meshRenderers = new ArrayList<>();
-    }
-
-    public  GameObject setScene(Scene scene){
-        this.scene = scene;
-        return this;
     }
 
     public GameObject setTransform(Transform trans) {
@@ -127,6 +123,33 @@ public abstract class GameObject {
         meshRenderers.clear();
     }
 
+    public void dispose() {
+        ResourceDisposalContext disposalContext = new ResourceDisposalContext();
+        dispose(disposalContext);
+        disposalContext.disposeAll();
+    }
+
+    public void dispose(ResourceDisposalContext disposalContext) {
+        for (MeshRenderer renderer : meshRenderers) {
+            if (renderer == null) {
+                continue;
+            }
+
+            if (disposalContext != null) {
+                disposalContext.trackMaterial(renderer.getMaterial());
+
+                SubMesh subMesh = renderer.getSubMesh();
+                if (subMesh != null) {
+                    disposalContext.trackTexture(subMesh.textureKa);
+                }
+            }
+
+            renderer.dispose();
+        }
+
+        meshRenderers.clear();
+    }
+
     public ArrayList<MeshRenderer> getMeshRenderers() {
         return meshRenderers;
     }
@@ -146,7 +169,7 @@ public abstract class GameObject {
     public void run() {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.render(this);
+                mr.render(createMaterialRenderData(null, mr));
             }
         }
     }
@@ -154,7 +177,7 @@ public abstract class GameObject {
     public void run(RenderContext ctx) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.render(ctx, this);
+                mr.render(createMaterialRenderData(ctx, mr));
             }
         }
     }
@@ -162,7 +185,7 @@ public abstract class GameObject {
     public void runWithMaterial(Material overrideMaterial) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.render(this, overrideMaterial);
+                mr.render(createMaterialRenderData(null, mr), overrideMaterial);
             }
         }
     }
@@ -170,7 +193,7 @@ public abstract class GameObject {
     public void runWithMaterial(RenderContext ctx, Material overrideMaterial) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.render(ctx, this, overrideMaterial);
+                mr.render(createMaterialRenderData(ctx, mr), overrideMaterial);
             }
         }
     }
@@ -178,7 +201,7 @@ public abstract class GameObject {
     public void debugRun() {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.debugRender(this);
+                mr.debugRender(createMaterialRenderData(null, mr));
             }
         }
     }
@@ -186,7 +209,7 @@ public abstract class GameObject {
     public void debugRun(RenderContext ctx) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.debugRender(ctx, this);
+                mr.debugRender(createMaterialRenderData(ctx, mr));
             }
         }
     }
@@ -194,7 +217,7 @@ public abstract class GameObject {
     public void debugRunWithMaterial(Material overrideMaterial) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.debugRender(this, overrideMaterial);
+                mr.debugRender(createMaterialRenderData(null, mr), overrideMaterial);
             }
         }
     }
@@ -202,7 +225,7 @@ public abstract class GameObject {
     public void debugRunWithMaterial(RenderContext ctx, Material overrideMaterial) {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.debugRender(ctx, this, overrideMaterial);
+                mr.debugRender(createMaterialRenderData(ctx, mr), overrideMaterial);
             }
         }
     }
@@ -225,11 +248,6 @@ public abstract class GameObject {
 
     public Vector3 up() {
         return localToWorld().transformDirection(new Vector3(0, 1, 0)).unit_vector();
-    }
-
-    public Matrix4 MVP() {
-        var main_camera = scene.getCamera();
-        return main_camera.Matrix().mult(localToWorld());
     }
 
     public Matrix4[] getBoneMatricesForSubMesh(SubMesh subMesh) {
@@ -272,6 +290,38 @@ public abstract class GameObject {
     public Material getMaterial() {
         if (meshRenderers == null || meshRenderers.size() == 0) return null;
         return meshRenderers.get(0).getMaterial();
+    }
+
+    private MaterialRenderData createMaterialRenderData(
+            RenderContext ctx,
+            MeshRenderer meshRenderer
+    ) {
+        SubMesh subMesh = meshRenderer == null ? null : meshRenderer.getSubMesh();
+
+        MaterialRenderData data = new MaterialRenderData();
+        data.modelMatrix = localToWorld();
+        data.boneMatrices = getBoneMatricesForSubMesh(subMesh);
+
+        Light light = ctx == null ? null : ctx.activeLight;
+        if (light != null) {
+            data.hasLight = true;
+            data.lightPosition = light.transform.position;
+            data.lightColor = light.getLightColor();
+            data.lightDirection = light.getLightDir();
+            data.lightFar = light.getLightFar();
+            data.lightSpaceMatrix = light.getProjectionMatrix().mult(light.getViewMatrix());
+        }
+
+        if (ctx != null && ctx.camera != null) {
+            data.viewPosition = ctx.camera.transform.position;
+            data.mvpMatrix = ctx.camera.Matrix().mult(data.modelMatrix);
+        }
+
+        if (subMesh != null) {
+            data.baseColorTexture = subMesh.textureKa;
+        }
+
+        return data;
     }
 }
 

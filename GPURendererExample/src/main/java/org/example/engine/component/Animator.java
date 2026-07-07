@@ -12,6 +12,8 @@ import org.example.engine.asset.skin.Skin;
 
 public class Animator {
 
+    private static final Matrix4[] EMPTY_MATRICES = new Matrix4[0];
+
     private final Asset asset;
     private AnimationClip currentClip;
     private double currentTime;
@@ -113,7 +115,7 @@ public class Animator {
 
     public Matrix4[] getBoneMatrices(int skinIndex) {
         if (skinIndex < 0 || skinIndex >= skinBoneMatrices.length) {
-            return new Matrix4[0];
+            return EMPTY_MATRICES;
         }
         return skinBoneMatrices[skinIndex];
     }

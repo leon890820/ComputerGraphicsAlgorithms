@@ -41,9 +41,6 @@ public class SceneA implements IScene {
                 .setScale(5, 5, 5)
                 .setPosition(0, 0, 0);
 
-        phongObject.setScene(scene);
-        floor.setScene(scene);
-
         scene.addObject(phongObject);
         scene.addObject(floor);
         scene.addLight(light);

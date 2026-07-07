@@ -21,9 +21,14 @@ public class ShadowPass extends RenderPass {
         ShadowBuffer.bindFrameBuffer();
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        shadowMaterial.setLight(light);
-        for(GameObject go : ctx.scene.getObjects()){
-            go.runWithMaterial(ctx, shadowMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            for(GameObject go : ctx.scene.getObjects()){
+                go.runWithMaterial(ctx, shadowMaterial);
+            }
+        } finally {
+            ctx.activeLight = previousLight;
         }
         ShadowBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }

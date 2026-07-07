@@ -49,10 +49,6 @@ public class SceneB implements IScene {
                 .setScale(4, 4, 4)
                 .setPosition(0, -0.1f, 0);
 
-        leftObject.setScene(scene);
-        rightObject.setScene(scene);
-        floor.setScene(scene);
-
         scene.addObject(leftObject);
         scene.addObject(rightObject);
         scene.addObject(floor);

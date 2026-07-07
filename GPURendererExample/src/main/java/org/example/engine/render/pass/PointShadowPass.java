@@ -3,6 +3,7 @@ package org.example.engine.render.pass;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.CubeMapFBO;
 import org.example.engine.gl.TextureCube;
+import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PointShadowMaterial;
 import org.example.engine.math.Matrix4;
@@ -18,16 +19,21 @@ public class PointShadowPass extends RenderPass {
     }
 
     public void render(RenderContext ctx, PointLight light) {
-        shadowMaterial.setLight(light);
         Matrix4[] shadowMatrices = light.getShadowMatrices();
         glEnable(GL_DEPTH_TEST);
-        for (int face = 0; face < 6; face++) {
-            ShadowBuffer.bindFace(face);
-            glClear(GL_DEPTH_BUFFER_BIT);
-            shadowMaterial.setShadowMatrix(shadowMatrices[face]);
-            for(GameObject go : ctx.scene.getObjects()){
-                go.runWithMaterial(ctx, shadowMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            for (int face = 0; face < 6; face++) {
+                ShadowBuffer.bindFace(face);
+                glClear(GL_DEPTH_BUFFER_BIT);
+                shadowMaterial.setShadowMatrix(shadowMatrices[face]);
+                for(GameObject go : ctx.scene.getObjects()){
+                    go.runWithMaterial(ctx, shadowMaterial);
+                }
             }
+        } finally {
+            ctx.activeLight = previousLight;
         }
         ShadowBuffer.unbind(ctx.screenWidth, ctx.screenHeight);
     }
