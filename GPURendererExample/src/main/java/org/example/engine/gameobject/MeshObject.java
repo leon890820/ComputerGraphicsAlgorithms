@@ -1,15 +1,18 @@
 package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
-import org.example.engine.importer.ObjLoader;
 import org.example.engine.asset.Asset;
-import org.example.engine.importer.AssetMeshAdapter;
-import org.example.engine.importer.AssimpAssetLoader;
 import org.example.engine.component.Animator;
+import org.example.engine.importer.DefaultMeshAssetLoader;
+import org.example.engine.importer.LoadedMeshAsset;
+import org.example.engine.importer.MeshAssetLoader;
 
 public class MeshObject extends GameObject {
 
+    private static MeshAssetLoader defaultLoader = new DefaultMeshAssetLoader();
+
     public Asset asset;
+    private MeshAssetLoader loader;
 
     public MeshObject() {
     }
@@ -18,21 +21,29 @@ public class MeshObject extends GameObject {
         load(path, mat);
     }
 
-    public MeshObject load(String path, Material mat) {
-        if (isObjPath(path)) {
-            asset = null;
-            setAnimator(null);
-            setMesh(new ObjLoader().load(stripObjExtension(path)));
-            buildSubMeshRenderers(mat);
-            return this;
-        }
+    public MeshObject(MeshAssetLoader loader) {
+        this.loader = loader;
+    }
 
-        asset = new AssimpAssetLoader().load(path);
-        setAnimator(asset != null && asset.hasAnimations()
+    public MeshObject(String path, Material mat, MeshAssetLoader loader) {
+        this.loader = loader;
+        load(path, mat);
+    }
+
+    public static void setDefaultLoader(MeshAssetLoader loader) {
+        if (loader != null) {
+            defaultLoader = loader;
+        }
+    }
+
+    public MeshObject load(String path, Material mat) {
+        LoadedMeshAsset loaded = getLoader().load(path);
+        asset = loaded.getAsset();
+        setAnimator(loaded.hasAnimations()
                 ? new Animator(asset)
                 : null);
 
-        setMesh(new AssetMeshAdapter().toMesh(asset));
+        setMesh(loaded.getMesh());
         buildSubMeshRenderers(mat);
         return this;
     }
@@ -45,30 +56,10 @@ public class MeshObject extends GameObject {
         return hasAnimator();
     }
 
-    private boolean isObjPath(String path) {
-        String lower = path == null ? "" : path.toLowerCase();
-        return lower.endsWith(".obj") || !fileName(lower).contains(".");
-    }
-
-    private String stripObjExtension(String path) {
-        if (path == null) {
-            return "";
+    private MeshAssetLoader getLoader() {
+        if (loader != null) {
+            return loader;
         }
-
-        String lower = path.toLowerCase();
-        if (lower.endsWith(".obj")) {
-            return path.substring(0, path.length() - 4);
-        }
-
-        return path;
-    }
-
-    private String fileName(String path) {
-        if (path == null) {
-            return "";
-        }
-
-        int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-        return slash >= 0 ? path.substring(slash + 1) : path;
+        return defaultLoader;
     }
 }

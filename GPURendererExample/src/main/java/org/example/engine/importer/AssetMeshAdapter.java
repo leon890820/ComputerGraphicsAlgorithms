@@ -34,8 +34,6 @@ public class AssetMeshAdapter {
             }
         }
 
-        System.out.println("[AssetMeshAdapter] converted subMeshes = " + out.getAllSubMeshes().size());
-        out.printSubMeshInfo();
         return out;
     }
 

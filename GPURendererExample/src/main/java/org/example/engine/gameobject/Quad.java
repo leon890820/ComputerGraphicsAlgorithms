@@ -1,12 +1,10 @@
 package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
-import org.example.engine.importer.ObjLoader;
 
-public class Quad extends GameObject {
+public class Quad extends MeshObject {
 
     public Quad(Material mat) {
-        setMesh(new ObjLoader().load("/meshes/quad"));
-        buildSubMeshRenderers(mat);
+        load("/meshes/quad", mat);
     }
 }
