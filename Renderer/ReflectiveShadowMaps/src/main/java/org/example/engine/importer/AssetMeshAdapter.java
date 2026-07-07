@@ -9,13 +9,6 @@ import org.example.engine.asset.mesh.MeshPrimitive;
 
 public class AssetMeshAdapter {
 
-    private boolean skipGuraOutlineMaterial = true;
-
-    public AssetMeshAdapter setSkipGuraOutlineMaterial(boolean skip) {
-        skipGuraOutlineMaterial = skip;
-        return this;
-    }
-
     public Mesh toMesh(Asset asset) {
         Mesh out = new Mesh();
         if (asset == null) {
@@ -32,8 +25,8 @@ public class AssetMeshAdapter {
                     continue;
                 }
 
-                if (skipGuraOutlineMaterial && primitive.materialIndex == 1) {
-                    System.out.println("[AssetMeshAdapter] skipped material_1 for legacy Gura outline behavior.");
+                if (isOutlineMaterial(asset, primitive)) {
+                    System.out.println("[AssetMeshAdapter] skipped outline material.");
                     continue;
                 }
 
@@ -72,5 +65,18 @@ public class AssetMeshAdapter {
             return null;
         }
         return asset.materials.get(materialIndex);
+    }
+
+    private boolean isOutlineMaterial(Asset asset, MeshPrimitive primitive) {
+        if (asset == null || primitive == null) {
+            return false;
+        }
+
+        MaterialData material = getMaterial(asset, primitive.materialIndex);
+        if (material == null || material.name == null) {
+            return false;
+        }
+
+        return material.name.toLowerCase().contains("outline");
     }
 }

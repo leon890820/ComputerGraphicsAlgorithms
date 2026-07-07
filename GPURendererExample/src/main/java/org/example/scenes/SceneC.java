@@ -60,7 +60,7 @@ public class SceneC implements IScene {
 
         MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);
         floor.setEular(3.1415926f / 2, 0, 0)
-                .setScale(5, 5, 5)
+                .setScale(10, 10, 10)
                 .setPosition(0, -0.05f, 0);
 
         gura.setScene(scene);

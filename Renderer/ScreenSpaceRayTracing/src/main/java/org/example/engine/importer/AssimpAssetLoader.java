@@ -108,10 +108,28 @@ public class AssimpAssetLoader {
 
         for (int i = 0; i < scene.mNumMaterials(); i++) {
             MaterialData out = new MaterialData();
-            out.name = "material_" + i;
+            AIMaterial material = AIMaterial.create(materials.get(i));
+            out.name = readMaterialName(material, i);
             out.baseColorTexture = textureCache.computeIfAbsent(i, index -> loadMaterialTexture(scene, index));
             asset.materials.add(out);
         }
+    }
+
+    private String readMaterialName(AIMaterial material, int materialIndex) {
+        AIString name = AIString.calloc();
+        try {
+            int result = aiGetMaterialString(material, AI_MATKEY_NAME, 0, 0, name);
+            if (result == aiReturn_SUCCESS) {
+                String value = name.dataString();
+                if (value != null && value.length() > 0) {
+                    return value;
+                }
+            }
+        } finally {
+            name.free();
+        }
+
+        return "material_" + materialIndex;
     }
 
     private void loadMeshes(AIScene scene, Asset asset) {
@@ -465,36 +483,22 @@ public class AssimpAssetLoader {
         AIString texturePath = AIString.calloc();
 
         try {
-            int result = aiGetMaterialTexture(
-                    material,
-                    aiTextureType_DIFFUSE,
-                    0,
-                    texturePath,
-                    (IntBuffer) null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
+            int result = readTextureRef(material, aiTextureType_DIFFUSE, texturePath);
 
             if (result != aiReturn_SUCCESS) {
-                result = aiGetMaterialTexture(
-                        material,
-                        aiTextureType_BASE_COLOR,
-                        0,
-                        texturePath,
-                        (IntBuffer) null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null
-                );
+                result = readTextureRef(material, aiTextureType_BASE_COLOR, texturePath);
             }
 
             if (result != aiReturn_SUCCESS) {
-                System.out.println("[AssimpAssetLoader] no diffuse/baseColor texture for material_" + materialIndex);
+                result = readTextureRef(material, aiTextureType_EMISSIVE, texturePath);
+            }
+
+            if (result != aiReturn_SUCCESS) {
+                result = readTextureRef(material, aiTextureType_EMISSION_COLOR, texturePath);
+            }
+
+            if (result != aiReturn_SUCCESS) {
+                System.out.println("[AssimpAssetLoader] no diffuse/baseColor/emissive texture for material_" + materialIndex);
                 return null;
             }
 
@@ -509,6 +513,21 @@ public class AssimpAssetLoader {
         } finally {
             texturePath.free();
         }
+    }
+
+    private int readTextureRef(AIMaterial material, int textureType, AIString texturePath) {
+        return aiGetMaterialTexture(
+                material,
+                textureType,
+                0,
+                texturePath,
+                (IntBuffer) null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
     private Texture loadEmbeddedTexture(AIScene scene, String ref) {
