@@ -49,11 +49,18 @@ public class Main {
     private void run() {
         setup();
 
-        while (!window.shouldClose()) {
-            draw();
+        try {
+            while (!window.shouldClose()) {
+                draw();
+            }
+        } finally {
+            if (scene != null) {
+                scene.clear();
+            }
+            if (window != null) {
+                window.destroy();
+            }
         }
-
-        window.destroy();
     }
 
     private void setup() {
@@ -189,6 +196,10 @@ public class Main {
     }
 
     private void setScene(SceneType sceneType) {
+        if (scene != null) {
+            scene.clear();
+        }
+
         currentSceneType = sceneType;
 
         if (currentSceneType == SceneType.A) {
