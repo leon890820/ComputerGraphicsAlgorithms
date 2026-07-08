@@ -16,8 +16,13 @@ public class ScenePass extends RenderPass {
     public void render(RenderContext ctx, Texture albedo, Light light) {
         albedoTex = albedo;
         sceneMaterial.setAlbedoTex(albedoTex);
-        sceneMaterial.setLight(light);
-        Camera camera = ctx.camera;
-        camera.runWithMaterial(ctx, sceneMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            Camera camera = ctx.camera;
+            camera.runWithMaterial(ctx, sceneMaterial);
+        } finally {
+            ctx.activeLight = previousLight;
+        }
     }
 }

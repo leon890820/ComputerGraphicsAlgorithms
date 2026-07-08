@@ -1,8 +1,8 @@
 package org.example.engine.material;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.Texture;
-import org.example.engine.mesh.SubMesh;
+
+import java.util.Set;
 
 public class QuadMaterial extends Material {
 
@@ -22,7 +22,7 @@ public class QuadMaterial extends Material {
     }
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
+    public void run(MaterialRenderData data) {
         if (tex != null && tex.isUploaded()) {
             setTexture("tex", tex, 0);
         }
@@ -32,6 +32,13 @@ public class QuadMaterial extends Material {
     public void cleanup() {
         if (tex != null) {
             unbindTexture(0);
+        }
+    }
+
+    @Override
+    public void collectTextures(Set<Texture> textures) {
+        if (tex != null) {
+            textures.add(tex);
         }
     }
 }

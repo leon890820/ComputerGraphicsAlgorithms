@@ -32,6 +32,8 @@ public class ObjLoader {
     Mesh mesh;
 
     public Mesh load(String fname) {
+        resetSourceData();
+
         mesh = new Mesh();
         objBasePath = fname;
         currentMaterialName = "default";
@@ -91,6 +93,12 @@ public class ObjLoader {
         assignTexturesToSubMeshes();
 
         return mesh;
+    }
+
+    private void resetSourceData() {
+        sourceVerts = new ArrayList<>();
+        sourceUVs = new ArrayList<>();
+        sourceNormals = new ArrayList<>();
     }
 
     private String normalizeMaterialName(String materialName) {

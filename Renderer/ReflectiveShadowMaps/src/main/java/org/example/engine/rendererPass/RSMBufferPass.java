@@ -34,9 +34,14 @@ public class RSMBufferPass extends RenderPass{
         glDisable(GL_BLEND);
         glClearColor(0.0f, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        rsmBufferMaterial.setLight(light);
-        for(GameObject gameObject : go){
-            gameObject.runWithMaterial(ctx, rsmBufferMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            for(GameObject gameObject : go){
+                gameObject.runWithMaterial(ctx, rsmBufferMaterial);
+            }
+        } finally {
+            ctx.activeLight = previousLight;
         }
         RSMBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }

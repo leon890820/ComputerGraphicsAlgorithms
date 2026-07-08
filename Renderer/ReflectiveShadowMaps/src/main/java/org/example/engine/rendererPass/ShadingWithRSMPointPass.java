@@ -57,9 +57,14 @@ public class ShadingWithRSMPointPass extends RenderPass{
         glDisable(GL_BLEND);
         glClearColor(0.0f, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        shadingWithPointRSMMaterial.setLight(light);
-        var camera = ctx.camera;
-        camera.runWithMaterial(ctx, shadingWithPointRSMMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            var camera = ctx.camera;
+            camera.runWithMaterial(ctx, shadingWithPointRSMMaterial);
+        } finally {
+            ctx.activeLight = previousLight;
+        }
         ShadingRSMBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }
 }

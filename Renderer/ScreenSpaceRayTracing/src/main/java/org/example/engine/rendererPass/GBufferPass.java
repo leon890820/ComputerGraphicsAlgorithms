@@ -42,10 +42,13 @@ public class GBufferPass extends RenderPass {
                 continue;
             }
 
-            if (light != null) {
-                gBufferMaterial.setLight(light);
+            Light previousLight = ctx.activeLight;
+            ctx.activeLight = light;
+            try {
+                go.runWithMaterial(ctx, gBufferMaterial);
+            } finally {
+                ctx.activeLight = previousLight;
             }
-            go.runWithMaterial(ctx, gBufferMaterial);
         }
         gBuffer.unbindFrameBuffer(ctx.screenWidth, ctx.screenHeight);
     }

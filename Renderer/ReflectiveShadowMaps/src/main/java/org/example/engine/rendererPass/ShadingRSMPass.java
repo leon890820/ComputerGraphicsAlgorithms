@@ -1,6 +1,5 @@
 package org.example.engine.rendererPass;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
 import org.example.engine.light.Light;
@@ -53,16 +52,19 @@ public class ShadingRSMPass extends RenderPass{
     }
 
     public void render(RenderContext ctx, Light light){
-        var go = ctx.scene.getObjects();
-
         ShadingRSMBuffer.bindFrameBuffer();
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         glClearColor(0.0f, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        shadingRSMBufferMaterial.setLight(light);
-        var camera = ctx.camera;
-        camera.runWithMaterial(ctx, shadingRSMBufferMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            var camera = ctx.camera;
+            camera.runWithMaterial(ctx, shadingRSMBufferMaterial);
+        } finally {
+            ctx.activeLight = previousLight;
+        }
         ShadingRSMBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }
 }

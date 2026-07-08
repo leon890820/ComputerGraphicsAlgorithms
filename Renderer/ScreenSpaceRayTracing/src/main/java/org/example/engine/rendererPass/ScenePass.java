@@ -4,7 +4,7 @@ import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;
 import org.example.engine.scene.Camera;
 
-abstract public class ScenePass extends RenderPass {
+public class ScenePass extends RenderPass {
     SceneMaterial sceneMaterial;
     Texture albedoTex;
 

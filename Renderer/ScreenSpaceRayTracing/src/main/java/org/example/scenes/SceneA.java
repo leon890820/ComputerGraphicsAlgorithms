@@ -1,6 +1,6 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gameobject.MeshObject;
 import org.example.engine.light.Light;
 import org.example.engine.light.SpotLight;
 import org.example.engine.material.PhongMaterial;
@@ -32,16 +32,13 @@ public class SceneA implements IScene {
         SSRMaterial ssrMaterial =
                 new SSRMaterial("/shaders/ScreenSpaceRayTracing.frag", "/shaders/ScreenSpaceRayTracing.vert");
 
-        PhongObject phongObject =
-                new PhongObject("/meshes/Furina/Furina", phongMaterial);
+        MeshObject phongObject =
+                new MeshObject("/meshes/Furina/Furina", phongMaterial);
 
-        PhongObject floor = new PhongObject("/meshes/Floor/quad", ssrMaterial);
+        MeshObject floor = new MeshObject("/meshes/Floor/quad", ssrMaterial);
         floor.setEular(-3.1415926f / 2, 0, 0)
                 .setScale(5, 5, 5)
                 .setPosition(0, 0, 0);
-
-        phongObject.setScene(scene);
-        floor.setScene(scene);
 
         scene.addObject(phongObject);
         scene.addObject(floor);

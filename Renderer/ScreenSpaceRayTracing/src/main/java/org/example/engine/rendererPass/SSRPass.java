@@ -39,20 +39,23 @@ public class SSRPass extends RenderPass{
         glDisable(GL_BLEND);
         glClearColor(0.0f, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        for (GameObject go : ctx.scene.getObjects()) {
-            var mat = go.getMaterial();
-            if (mat != null && light != null) {
-                mat.setLight(light);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            for (GameObject go : ctx.scene.getObjects()) {
+                var mat = go.getMaterial();
+                if(mat instanceof SSRMaterial){
+                    SSRMaterial ssrMat = (SSRMaterial) mat;
+                    ssrMat
+                            .setAlbedoTex(albedoTex)
+                            .setNormalTex(normalTex)
+                            .setWorldPosTex(worldPosTex)
+                            .setDepthTex(depthTex);
+                }
+                go.run(ctx);
             }
-            if(mat instanceof SSRMaterial){
-                SSRMaterial ssrMat = (SSRMaterial) mat;
-                ssrMat
-                        .setAlbedoTex(albedoTex)
-                        .setNormalTex(normalTex)
-                        .setWorldPosTex(worldPosTex)
-                        .setDepthTex(depthTex);
-            }
-            go.run(ctx);
+        } finally {
+            ctx.activeLight = previousLight;
         }
         SSRBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }

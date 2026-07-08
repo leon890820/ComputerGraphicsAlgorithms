@@ -1,8 +1,6 @@
 package org.example.engine.material;
 
 import org.example.engine.gl.Texture;
-import org.example.engine.gameobject.GameObject;
-import org.example.engine.mesh.SubMesh;
 
 public class LightMaterial extends Material {
 
@@ -38,14 +36,29 @@ public class LightMaterial extends Material {
 
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
+    public void run(MaterialRenderData data) {
         setTexture("albedo", albedoTex, 0);
         setTexture("worldNormal", normalTex, 1);
         setTexture("worldPos", positionTex, 2);
         setTexture("shadowMap", depthTex, 3);
 
-        lightSource.setShaderParameter(this);
+        applyLightUniforms(data);
 
+    }
+
+    protected void applyLightUniforms(MaterialRenderData data) {
+        if (data == null || !data.hasLight) {
+            return;
+        }
+
+        setVector3ToUniform("light_color", data.lightColor);
+        setVector3ToUniform("light_dir", data.lightDirection);
+        setVector3ToUniform("light_pos", data.lightPosition);
+        setFloatToUniform("lightFar", data.lightFar);
+
+        if (data.lightSpaceMatrix != null) {
+            setMatrix4ToUniform("lightSpaceMatrix", data.lightSpaceMatrix);
+        }
     }
 
     @Override

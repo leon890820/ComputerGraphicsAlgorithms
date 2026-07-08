@@ -1,12 +1,8 @@
 package org.example.engine.material;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.Texture;
-import org.example.engine.math.Matrix4;
-import org.example.engine.math.Vector3;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.render.RenderContext;
-import org.example.engine.scene.Camera;
+
+import java.util.Set;
 
 public class GBufferMaterial extends Material {
 
@@ -31,44 +27,31 @@ public class GBufferMaterial extends Material {
     }
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
-        run(null, go, subMesh);
-    }
-
     @Override
-    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
-        if (ctx == null || ctx.camera == null) {
-            System.out.println("[GBufferMaterial] RenderContext camera is not set.");
+    public void run(MaterialRenderData data) {
+        if (data == null || data.modelMatrix == null || data.mvpMatrix == null) {
+            System.out.println("[GBufferMaterial] render data is missing model or MVP matrix.");
             return;
         }
 
-        Camera camera = ctx.camera;
-        Matrix4 model = go.localToWorld();
-        Matrix4 mvp = camera.Matrix().mult(model);
-        Matrix4 V = camera.getViewMatrix();
+        setMatrix4ToUniform("MVP", data.mvpMatrix);
+        setMatrix4ToUniform("modelMatrix", data.modelMatrix);
+        setMatrix4ToUniform("u_ViewMatrix", data.viewMatrix);
+        applySkinning(data);
 
-        setMatrix4ToUniform("MVP", mvp);
-        setMatrix4ToUniform("modelMatrix", model);
-        setMatrix4ToUniform("u_ViewMatrix", V);
-        applySkinning(go, subMesh);
-
-        setVector3ToUniform("ambient_light", new Vector3(0.5f,0.5f,0.5f));
-        setVector3ToUniform("cameraPos", camera.transform.position);
-        setFloatToUniform("cameraFar", camera.getFar());
+        setVector3ToUniform("ambient_light", 0.5f, 0.5f, 0.5f);
+        setVector3ToUniform("cameraPos", data.viewPosition);
+        setFloatToUniform("cameraFar", data.cameraFar);
 
 
-        Texture useTex = texture;
-
-        if (useTex == null && subMesh != null) {
-            useTex = subMesh.textureKa;
-        }
+        Texture useTex = texture != null ? texture : data.baseColorTexture;
 
         if (useTex != null && useTex.isUploaded()) {
             setIntToUniform("hasTexture", 1);
             setTexture("tex", useTex, 0);
         } else {
             setIntToUniform("hasTexture", 0);
-            setVector3ToUniform("defaultColor", new Vector3(0.45f, 0.45f, 0.45f));
+            setVector3ToUniform("defaultColor", 0.45f, 0.45f, 0.45f);
         }
 
         if (normalMap != null && normalMap.isUploaded()) {
@@ -83,5 +66,15 @@ public class GBufferMaterial extends Material {
     public void cleanup() {
         unbindTexture(0);
         unbindTexture(1);
+    }
+
+    @Override
+    public void collectTextures(Set<Texture> textures) {
+        if (texture != null) {
+            textures.add(texture);
+        }
+        if (normalMap != null) {
+            textures.add(normalMap);
+        }
     }
 }

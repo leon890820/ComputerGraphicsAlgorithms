@@ -1,9 +1,8 @@
 package org.example.engine.component;
 
 import org.example.engine.material.Material;
+import org.example.engine.material.MaterialRenderData;
 import org.example.engine.mesh.SubMesh;
-import org.example.engine.gameobject.GameObject;
-import org.example.engine.render.RenderContext;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -85,7 +84,7 @@ public class MeshRenderer {
 
     public void initialize() {
         if (subMesh == null) {
-            System.out.println("[MeshRenderer] initialize failed: subMesh or gameObject is null");
+            System.out.println("[MeshRenderer] initialize failed: subMesh is null");
             return;
         }
 
@@ -220,27 +219,19 @@ public class MeshRenderer {
         buffer.rewind();
     }
 
-    public void render(GameObject go) {
-        render(go, defaultMaterial);
+    public void render(MaterialRenderData data) {
+        render(data, defaultMaterial);
     }
 
-    public void render(RenderContext ctx, GameObject go) {
-        render(ctx, go, defaultMaterial);
-    }
-
-    public void render(GameObject go, Material overrideMaterial) {
-        render(null, go, overrideMaterial);
-    }
-
-    public void render(RenderContext ctx, GameObject go, Material overrideMaterial) {
+    public void render(MaterialRenderData data, Material overrideMaterial) {
         if (!initialized || vao == null) return;
-        if (go == null) return;
+        if (data == null) return;
 
         Material useMat = overrideMaterial != null ? overrideMaterial : defaultMaterial;
         if (useMat == null) return;
 
         useMat.bind();
-        useMat.run(ctx, go, subMesh);
+        useMat.run(data);
 
         glBindVertexArray(vao.get(0));
         glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);
@@ -250,27 +241,19 @@ public class MeshRenderer {
         useMat.unbind();
     }
 
-    public void debugRender(GameObject go) {
-        debugRender(go, defaultMaterial);
+    public void debugRender(MaterialRenderData data) {
+        debugRender(data, defaultMaterial);
     }
 
-    public void debugRender(RenderContext ctx, GameObject go) {
-        debugRender(ctx, go, defaultMaterial);
-    }
-
-    public void debugRender(GameObject go, Material overrideMaterial) {
-        debugRender(null, go, overrideMaterial);
-    }
-
-    public void debugRender(RenderContext ctx, GameObject go, Material overrideMaterial) {
+    public void debugRender(MaterialRenderData data, Material overrideMaterial) {
         if (!initialized || vao == null) return;
-        if (go == null) return;
+        if (data == null) return;
 
         Material useMat = overrideMaterial != null ? overrideMaterial : defaultMaterial;
         if (useMat == null) return;
 
         useMat.bind();
-        useMat.run(ctx, go, subMesh);
+        useMat.run(data);
 
         glBindVertexArray(vao.get(0));
         glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, 0);

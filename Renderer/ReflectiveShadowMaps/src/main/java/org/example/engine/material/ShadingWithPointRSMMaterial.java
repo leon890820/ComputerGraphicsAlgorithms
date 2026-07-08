@@ -1,9 +1,7 @@
 package org.example.engine.material;
 
 import org.example.Main;
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.*;
-import org.example.engine.mesh.SubMesh;
 
 public class ShadingWithPointRSMMaterial extends Material {
     Texture u_AlbedoTexture = new Texture(1,1);
@@ -60,7 +58,7 @@ public class ShadingWithPointRSMMaterial extends Material {
         return this;
     }
 
-    public void run(GameObject go, SubMesh subMesh) {
+    public void run(MaterialRenderData data) {
         setTexture("u_AlbedoTexture", u_AlbedoTexture, 0);
         setTexture("u_NormalTexture", u_NormalTexture, 1);
         setTexture("u_PositionTexture", u_PositionTexture, 2);
@@ -73,8 +71,10 @@ public class ShadingWithPointRSMMaterial extends Material {
         setFloatToUniform("u_MaxSampleRadius", u_MaxSampleRadius);
         setIntToUniform("u_RSMSize", 1024);
         setIntToUniform("u_VPLNum", 32);
-        setVector3ToUniform("u_LightPosInWorldSpace", (lightSource.getPosition()));
-        setFloatToUniform("lightFar", lightSource.getLightFar());
+        if (data != null && data.hasLight) {
+            setVector3ToUniform("u_LightPosInWorldSpace", data.lightPosition);
+            setFloatToUniform("lightFar", data.lightFar);
+        }
 
         setIntToUniform("RTX", Main.RTX ? 1 : 0);
 

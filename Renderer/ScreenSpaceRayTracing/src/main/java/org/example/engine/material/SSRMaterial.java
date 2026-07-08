@@ -1,11 +1,8 @@
 package org.example.engine.material;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.Texture;
-import org.example.engine.math.Matrix4;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.render.RenderContext;
-import org.example.engine.scene.Camera;
+
+import java.util.Set;
 
 
 public class SSRMaterial extends Material{
@@ -62,25 +59,16 @@ public class SSRMaterial extends Material{
     }
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
-        run(null, go, subMesh);
-    }
-
     @Override
-    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
-        if (ctx == null || ctx.camera == null) {
-            System.out.println("[SSRMaterial] RenderContext camera is not set.");
+    public void run(MaterialRenderData data) {
+        if (data == null || data.modelMatrix == null || data.viewMatrix == null || data.projectionMatrix == null) {
+            System.out.println("[SSRMaterial] render data is missing camera or model matrix.");
             return;
         }
 
-        Camera camera = ctx.camera;
-        Matrix4 model = go.localToWorld();
-        Matrix4 V = camera.getViewMatrix();
-        Matrix4 P = camera.getProjectionMatrix();
-
-        setMatrix4ToUniform("modelMatrix", model);
-        setMatrix4ToUniform("u_ViewMatrix", V);
-        setMatrix4ToUniform("u_ProjectionMatrix", P);
+        setMatrix4ToUniform("modelMatrix", data.modelMatrix);
+        setMatrix4ToUniform("u_ViewMatrix", data.viewMatrix);
+        setMatrix4ToUniform("u_ProjectionMatrix", data.projectionMatrix);
 
         setTexture("albedoTex", albedoTex, 0);
         setTexture("normalTex", normalTex, 1);
@@ -93,10 +81,10 @@ public class SSRMaterial extends Material{
             setIntToUniform("hasNormalMap", 0);
         }
 
-        setVector3ToUniform("cameraPos", camera.transform.position);
-        setFloatToUniform("cameraFar", camera.getFar());
-        setFloatToUniform("u_WindowWidth", ctx.screenWidth);
-        setFloatToUniform("u_WindowHeight", ctx.screenHeight);
+        setVector3ToUniform("cameraPos", data.viewPosition);
+        setFloatToUniform("cameraFar", data.cameraFar);
+        setFloatToUniform("u_WindowWidth", data.screenWidth);
+        setFloatToUniform("u_WindowHeight", data.screenHeight);
         setFloatToUniform("u_Fuzz", fuzz);
         setIntToUniform("u_FuzzySampleCount", fuzzySampleCount);
     }
@@ -108,5 +96,12 @@ public class SSRMaterial extends Material{
         unbindTexture(2);
         unbindTexture(3);
         unbindTexture(4);
+    }
+
+    @Override
+    public void collectTextures(Set<Texture> textures) {
+        if (normalMapTex != null) {
+            textures.add(normalMapTex);
+        }
     }
 }

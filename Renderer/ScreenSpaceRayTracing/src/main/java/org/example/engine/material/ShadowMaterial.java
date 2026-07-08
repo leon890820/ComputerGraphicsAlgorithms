@@ -1,12 +1,6 @@
 package org.example.engine.material;
 
-import org.example.engine.math.Matrix4;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.gameobject.GameObject;
-import  org.example.engine.light.Light;
-
 public class ShadowMaterial extends Material {
-    Light lightSource;
 
     public ShadowMaterial(String frag) {
         super(frag);
@@ -16,21 +10,19 @@ public class ShadowMaterial extends Material {
         super(frag, vert);
     }
 
-    public ShadowMaterial setLight(Light l) {
-        lightSource = l;
-        return this;
-    }
-
-
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
-        Matrix4 model = go.localToWorld();
-        Matrix4 shadowMatrix = lightSource.getProjectionMatrix().mult(lightSource.getViewMatrix());
-        setMatrix4ToUniform("modelMatrix", model);
-        setMatrix4ToUniform("shadowMatrix", shadowMatrix);
-        applySkinning(go, subMesh);
-        setVector3ToUniform("lightPos", lightSource.transform.position);
-        setFloatToUniform("lightFar", lightSource.getLightFar());
+    public void run(MaterialRenderData data) {
+        if (data == null || data.modelMatrix == null) {
+            return;
+        }
+
+        setMatrix4ToUniform("modelMatrix", data.modelMatrix);
+        if (data.shadowMatrix != null) {
+            setMatrix4ToUniform("shadowMatrix", data.shadowMatrix);
+        }
+        applySkinning(data);
+        setVector3ToUniform("lightPos", data.lightPosition);
+        setFloatToUniform("lightFar", data.lightFar);
     }
 
     @Override

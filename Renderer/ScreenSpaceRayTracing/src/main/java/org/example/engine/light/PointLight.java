@@ -1,6 +1,5 @@
 package org.example.engine.light;
 
-import org.example.engine.material.LightMaterial;
 import org.example.engine.math.*;
 
 public class PointLight extends Light {
@@ -67,16 +66,6 @@ public class PointLight extends Light {
     public Matrix4 getProjectionMatrix() {
         return Matrix4.Identity();
     }
-
-    @Override
-    public void setShaderParameter(LightMaterial mat) {
-        mat.setVector3ToUniform("light_pos", transform.position);
-        mat.setVector3ToUniform("light_color", light_color);
-        //mat.setFloatToUniform("light_radius", radius);
-        //mat.setFloatToUniform("light_intensity", intensity);
-        mat.setFloatToUniform("lightFar", far);
-    }
-
 
     public float getLightFar(){
         return far;

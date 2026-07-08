@@ -1,10 +1,6 @@
 package org.example.engine.material;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.Texture;
-import org.example.engine.math.Matrix4;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.scene.Camera;
 
 public class ShadingWithRSMMaterial extends Material {
     Texture u_AlbedoTexture = new Texture(1,1);
@@ -61,7 +57,7 @@ public class ShadingWithRSMMaterial extends Material {
         return this;
     }
 
-    public void run(GameObject go, SubMesh subMesh) {
+    public void run(MaterialRenderData data) {
         setTexture("u_AlbedoTexture", u_AlbedoTexture, 0);
         setTexture("u_NormalTexture", u_NormalTexture, 1);
         setTexture("u_PositionTexture", u_PositionTexture, 2);
@@ -70,19 +66,17 @@ public class ShadingWithRSMMaterial extends Material {
         setTexture("u_RSMPositionTexture", u_RSMPositionTexture, 5);
         setTexture("u_RSMDepthTexture", u_RSMDepthTexture, 6);
 
-        var camera = (Camera) go;
-
-        Matrix4 lightView = lightSource.getViewMatrix();
-        Matrix4 lightProject = lightSource.getProjectionMatrix();
-        Matrix4 view = camera.getViewMatrix();
-
-        setMatrix4ToUniform("u_LightVPMatrix", lightProject.mult(lightView));
+        if (data != null && data.lightSpaceMatrix != null) {
+            setMatrix4ToUniform("u_LightVPMatrix", data.lightSpaceMatrix);
+        }
         setFloatToUniform("u_MaxSampleRadius", u_MaxSampleRadius);
         setIntToUniform("u_RSMSize", 1024);
         setIntToUniform("u_VPLNum", 32);
-        setVector3ToUniform("u_LightDirInWorldSpace", (lightSource.getLightDir()));
-        setVector3ToUniform("u_LightPosInWorldSpace", (lightSource.getPosition()));
-        setFloatToUniform("lightFar", lightSource.getLightFar());
+        if (data != null && data.hasLight) {
+            setVector3ToUniform("u_LightDirInWorldSpace", data.lightDirection);
+            setVector3ToUniform("u_LightPosInWorldSpace", data.lightPosition);
+            setFloatToUniform("lightFar", data.lightFar);
+        }
 
         setIntToUniform("RTX", true ? 1 : 0);
 

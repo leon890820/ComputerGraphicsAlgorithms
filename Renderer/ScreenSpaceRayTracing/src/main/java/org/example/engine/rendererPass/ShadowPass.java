@@ -19,9 +19,14 @@ public class ShadowPass extends RenderPass {
 
     public void render(RenderContext ctx, Light light) {
         ShadowBuffer.bindFrameBuffer();
-        shadowMaterial.setLight(light);
-        for(GameObject go : ctx.scene.getObjects()){
-            go.runWithMaterial(ctx, shadowMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            for(GameObject go : ctx.scene.getObjects()){
+                go.runWithMaterial(ctx, shadowMaterial);
+            }
+        } finally {
+            ctx.activeLight = previousLight;
         }
         ShadowBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }

@@ -1,8 +1,7 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.AssimpObject;
 import org.example.engine.gameobject.GameObject;
-import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gameobject.MeshObject;
 import org.example.engine.gl.Texture;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
@@ -20,7 +19,7 @@ public class SceneB implements IScene {
     private final float speed = 200.0f;
     private float rotation = 0.0f;
 
-    private AssimpObject gura;
+    private MeshObject gura;
     private Light light;
 
     @Override
@@ -35,8 +34,8 @@ public class SceneB implements IScene {
         PhongMaterial phongMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza", phongMaterial);
-        gura = new AssimpObject("../../Model/GuraAnim/gura.glb", phongMaterial);
+        MeshObject sponza = new MeshObject("../../Model/sponza/Scale300Sponza", phongMaterial);
+        gura = new MeshObject("../../Model/GuraAnim/gura.glb", phongMaterial);
         gura.playAnimation("ParadeWalk");
         gura.setScale(50, 50, 50).setPosition(0, -660, 100);
 
@@ -47,14 +46,10 @@ public class SceneB implements IScene {
                 .setFuzz(0.0f)
                 .setFuzzySampleCount(1);
 
-        PhongObject ssrFloor = new PhongObject("/meshes/quad", ssrMaterial);
+        MeshObject ssrFloor = new MeshObject("/meshes/quad", ssrMaterial);
         ssrFloor.setEular(-3.1415926f / 2, 0, 0)
                 .setScale(1500, 1500, 1500)
                 .setPosition(0, -659f, 0);
-
-        sponza.setScene(scene);
-        gura.setScene(scene);
-        ssrFloor.setScene(scene);
 
         scene.addObject(sponza);
         scene.addObject(gura);

@@ -1,8 +1,6 @@
 package org.example.engine.material;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.math.Matrix4;
-import org.example.engine.mesh.SubMesh;
 
 public class RSMPointBufferMaterial extends RSMBufferMaterial {
     Matrix4 shadowMatrix;
@@ -21,15 +19,18 @@ public class RSMPointBufferMaterial extends RSMBufferMaterial {
     }
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
-        Matrix4 model = go.localToWorld();
-        setMatrix4ToUniform("modelMatrix", model);
-        setMatrix4ToUniform("lightVPMatrix", shadowMatrix);
-        applySkinning(go, subMesh);
-        setVector3ToUniform("lightPos", lightSource.transform.position);
-        setFloatToUniform("lightFar", lightSource.getLightFar());
-        if (subMesh != null && subMesh.textureKa != null && subMesh.textureKa.isUploaded()) {
-            setTexture("tex", subMesh.textureKa, 0);
+    public void run(MaterialRenderData data) {
+        if (data == null || data.modelMatrix == null) {
+            return;
+        }
+
+        setMatrix4ToUniform("modelMatrix", data.modelMatrix);
+        setMatrix4ToUniform("lightVPMatrix", shadowMatrix != null ? shadowMatrix : data.shadowMatrix);
+        applySkinning(data);
+        setVector3ToUniform("lightPos", data.lightPosition);
+        setFloatToUniform("lightFar", data.lightFar);
+        if (data.baseColorTexture != null && data.baseColorTexture.isUploaded()) {
+            setTexture("tex", data.baseColorTexture, 0);
         }
     }
 }

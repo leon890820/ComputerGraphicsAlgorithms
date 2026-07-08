@@ -104,33 +104,6 @@ public class Mesh {
         return mtllibName;
     }
 
-    public void printSubMeshInfo() {
-        System.out.println("SubMesh count: " + subMeshes.size());
-        for (String key : subMeshes.keySet()) {
-            SubMesh sub = subMeshes.get(key);
-            System.out.println("material = " + key
-                    + ", vertices = " + sub.getVertexCount()
-                    + ", indices = " + sub.getIndexCount());
-        }
-    }
-
-    public void printTextureKaInfo() {
-        for (String key : subMeshes.keySet()) {
-            SubMesh sub = subMeshes.get(key);
-            boolean hasTex = sub != null && sub.textureKa != null && sub.textureKa.isUploaded();
-            System.out.println("material = " + key + ", has map_Ka texture = " + hasTex);
-        }
-    }
-
-    public void printMtlInfo() {
-        System.out.println("mtllib = " + mtllibName);
-        System.out.println("mtl material count = " + mtlMaterials.size());
-        for (String key : mtlMaterials.keySet()) {
-            MtlMaterial m = mtlMaterials.get(key);
-            System.out.println("material = " + key + ", map_Ka = " + m.mapKa);
-        }
-    }
-
     public void reCaculateNormal() {
         finishBuild();
         for (SubMesh subMesh : subMeshes.values()) {

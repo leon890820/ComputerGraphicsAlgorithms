@@ -1,7 +1,6 @@
 package org.example.engine.light;
 
 import org.example.engine.math.*;
-import org.example.engine.material.*;
 
 public class DirectionalLight extends Light {
 
@@ -33,19 +32,6 @@ public class DirectionalLight extends Light {
     public Matrix4 getProjectionMatrix() {
         return Matrix4.Ortho(left, right, bottom, top, near, far);
     }
-
-
-    @Override
-    public void setShaderParameter(LightMaterial material){
-        Matrix4 view = getViewMatrix();
-        Matrix4 project = getProjectionMatrix();
-        material.setVector3ToUniform("light_color", light_color);
-        material.setMatrix4ToUniform("lightSpaceMatrix", project.mult(view));
-        material.setVector3ToUniform("light_dir", light_dir);
-        material.setFloatToUniform("lightFar", far);
-        material.setVector3ToUniform("light_pos", transform.position);
-    }
-
     @Override
     public float getLightFar(){
         return far;

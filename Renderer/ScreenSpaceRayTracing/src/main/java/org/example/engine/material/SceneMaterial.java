@@ -1,8 +1,6 @@
 package org.example.engine.material;
 
-import org.example.engine.gameobject.GameObject;
 import org.example.engine.gl.Texture;
-import org.example.engine.mesh.SubMesh;
 
 public class SceneMaterial extends Material {
 
@@ -23,7 +21,7 @@ public class SceneMaterial extends Material {
 
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
+    public void run(MaterialRenderData data) {
         setTexture("albedo", albedoTex, 0);
     }
 

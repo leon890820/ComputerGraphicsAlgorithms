@@ -12,7 +12,7 @@ public class Renderer {
     public Renderer(int screenWidth, int screenHeight) {
         gBufferPass = new GBufferPass(screenWidth, screenHeight);
         ssrPass = new SSRPass(screenWidth, screenHeight);
-        scenePass = new SpotScenePass();
+        scenePass = new ScenePass();
     }
 
     public void render(RenderContext ctx) {

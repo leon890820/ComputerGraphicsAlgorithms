@@ -1,7 +1,7 @@
 package org.example.scenes;
 
 import org.example.engine.gameobject.GameObject;
-import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gameobject.MeshObject;
 import org.example.engine.gl.SSBO;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
@@ -19,7 +19,7 @@ public class SceneA implements IScene {
     private final float speed = 200.0f;
     private float rotation = 0.0f;
 
-    private PhongObject furina;
+    private MeshObject furina;
     private Light light;
     private SSBO vplSamples;
 
@@ -32,13 +32,10 @@ public class SceneA implements IScene {
         Scene scene = new Scene();
         scene.setCamera(camera);
 
-        PhongObject sponza = new PhongObject("../../Model/sponza/Scale300Sponza", null);
-        furina = new PhongObject("../../Model/GuraAnim/gura.glb", null);
+        MeshObject sponza = new MeshObject("../../Model/sponza/Scale300Sponza", null);
+        furina = new MeshObject("../../Model/GuraAnim/gura.glb", null);
         furina.playAnimation("smolguraAnimationsRESOURCE");
         furina.setScale(100, 100, 100).setPosition(0, -660, 100);
-
-        sponza.setScene(scene);
-        furina.setScene(scene);
 
         scene.addObject(sponza);
         scene.addObject(furina);
