@@ -1,6 +1,6 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gameobject.MeshObject;
 import org.example.engine.gl.Texture;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PhongMaterial;
@@ -27,8 +27,8 @@ public class SceneA implements IScene {
         PhongMaterial phongMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        PhongObject phongObject =
-                new PhongObject("/meshes/Furina/Furina", phongMaterial);
+        MeshObject phongObject =
+                new MeshObject("/meshes/Furina/Furina", phongMaterial);
 
         PhongMaterial floorMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
@@ -36,13 +36,10 @@ public class SceneA implements IScene {
         Texture floorTexture = new Texture("/textures/Floor.png");
         floorMaterial.setTexture(floorTexture);
 
-        PhongObject floor = new PhongObject("/meshes/quad", floorMaterial);
+        MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);
         floor.setEular(3.1415926f / 2, 0, 0)
                 .setScale(5, 5, 5)
                 .setPosition(0, 0, 0);
-
-        phongObject.setScene(scene);
-        floor.setScene(scene);
 
         scene.addObject(phongObject);
         scene.addObject(floor);

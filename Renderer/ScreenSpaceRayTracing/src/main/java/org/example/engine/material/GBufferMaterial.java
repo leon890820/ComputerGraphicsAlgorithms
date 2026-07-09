@@ -27,7 +27,6 @@ public class GBufferMaterial extends Material {
     }
 
     @Override
-    @Override
     public void run(MaterialRenderData data) {
         if (data == null || data.modelMatrix == null || data.mvpMatrix == null) {
             System.out.println("[GBufferMaterial] render data is missing model or MVP matrix.");

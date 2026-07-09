@@ -2,6 +2,7 @@ package org.example.engine.scene;
 
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.light.Light;
+import org.example.engine.resource.ResourceDisposalContext;
 
 import java.util.ArrayList;
 
@@ -43,9 +44,17 @@ public class Scene {
         return camera;
     }
 
-    // ===== optional（之後會用到）=====
 
     public void clear() {
+        ResourceDisposalContext disposalContext = new ResourceDisposalContext();
+
+        for (GameObject object : objects) {
+            if (object != null) {
+                object.dispose(disposalContext);
+            }
+        }
+
+        disposalContext.disposeAll();
         objects.clear();
         lights.clear();
         camera = null;

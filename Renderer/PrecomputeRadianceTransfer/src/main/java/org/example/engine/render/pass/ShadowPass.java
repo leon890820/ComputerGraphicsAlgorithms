@@ -1,4 +1,4 @@
-package org.example.engine.rendererPass;
+package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
@@ -19,9 +19,16 @@ public class ShadowPass extends RenderPass {
 
     public void render(RenderContext ctx, Light light) {
         ShadowBuffer.bindFrameBuffer();
-        shadowMaterial.setLight(light);
-        for(GameObject go : ctx.scene.getObjects()){
-            go.runWithMaterial(ctx, shadowMaterial);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            for(GameObject go : ctx.scene.getObjects()){
+                go.runWithMaterial(ctx, shadowMaterial);
+            }
+        } finally {
+            ctx.activeLight = previousLight;
         }
         ShadowBuffer.unbindFrameBuffer(ctx.screenWidth,ctx.screenHeight);
     }

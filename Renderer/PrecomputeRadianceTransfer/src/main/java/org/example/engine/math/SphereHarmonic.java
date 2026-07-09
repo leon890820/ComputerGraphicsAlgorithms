@@ -1,0 +1,320 @@
+package org.example.engine.math;
+
+import static org.example.engine.math.Vector3.toVector;
+
+public class SphereHarmonic {
+    static int kCacheSize = 12;
+
+    static public float EvalSH(int l, int m, Vector3 dir) {
+        if (l<0 || m<-l||m>l) {
+            throw new RuntimeException("Invalid number");
+        }
+        dir = dir.unit_vector();
+        if (l<=4) {
+            switch(l) {
+                case 0:
+                    return HardcodedSH00(dir);
+                case 1:
+                    switch(m) {
+                        case -1:
+                            return HardcodedSH1n1(dir);
+                        case  0:
+                            return HardcodedSH10(dir);
+                        case  1:
+                            return HardcodedSH1p1(dir);
+                    }
+                case 2:
+                    switch(m) {
+                        case -2:
+                            return HardcodedSH2n2(dir);
+                        case -1:
+                            return HardcodedSH2n1(dir);
+                        case  0:
+                            return HardcodedSH20(dir);
+                        case  1:
+                            return HardcodedSH2p1(dir);
+                        case  2:
+                            return HardcodedSH2p2(dir);
+                    }
+                case 3:
+                    switch(m) {
+                        case -3:
+                            return HardcodedSH3n3(dir);
+                        case -2:
+                            return HardcodedSH3n2(dir);
+                        case -1:
+                            return HardcodedSH3n1(dir);
+                        case  0:
+                            return HardcodedSH30(dir);
+                        case  1:
+                            return HardcodedSH3p1(dir);
+                        case  2:
+                            return HardcodedSH3p2(dir);
+                        case  3:
+                            return HardcodedSH3p3(dir);
+                    }
+                case 4:
+                    switch(m) {
+                        case -4:
+                            return HardcodedSH4n4(dir);
+                        case -3:
+                            return HardcodedSH4n3(dir);
+                        case -2:
+                            return HardcodedSH4n2(dir);
+                        case -1:
+                            return HardcodedSH4n1(dir);
+                        case  0:
+                            return HardcodedSH40(dir);
+                        case  1:
+                            return HardcodedSH4p1(dir);
+                        case  2:
+                            return HardcodedSH4p2(dir);
+                        case  3:
+                            return HardcodedSH4p3(dir);
+                        case  4:
+                            return HardcodedSH4p4(dir);
+                    }
+            }
+        } else {
+            return EvalSHSlow(l, m, dir);
+        }
+        return 0;
+    }
+    static public float EvalSH(int l, int m, float phi, float theta) {
+        if (l<0 || m<-l||m>l) {
+            throw new RuntimeException("Invalid number");
+        }
+        if (l <= 4) {
+            return EvalSH(l, m, toVector(phi, theta));
+        } else {
+            return EvalSHSlow(l, m, phi, theta);
+        }
+    }
+    static public float EvalSHSlow(int l, int m, Vector3 d) {
+        if (l<0 || m<-l||m>l) {
+            throw new RuntimeException("Invalid number");
+        }
+        float[] pt = ToSphericalCoords(d.unit_vector());
+        return EvalSHSlow(l, m, pt[0], pt[1]);
+    }
+
+    static public float Clamp(float n, float x1, float x2) {
+        return Math.min(Math.max(n, x1), x2);
+    }
+
+    static public float[] ToSphericalCoords(Vector3 dir) {
+        float theta = (float) Math.acos(Clamp(dir.z(), -1.0f, 1.0f));
+        float phi = (float) Math.atan2(dir.y(), dir.x());
+        return new float[]{phi, theta};
+    }
+
+    static public float EvalSHSlow(int l, int m, float phi, float theta) {
+        if (l<0 || m<-l||m>l) {
+            throw new RuntimeException("Invalid number");
+        }
+
+        float kml = (float) Math.sqrt((2.0f * l + 1.0f) * Factorial(l - Math.abs(m))
+                / (4.0f * (float) Math.PI * Factorial(l + Math.abs(m))));
+        if (m > 0) {
+            return (float) Math.sqrt(2.0f) * kml * (float) Math.cos(m * phi)
+                    * EvalLegendrePolynomial(l, m, (float) Math.cos(theta));
+        } else if (m < 0) {
+            return (float) Math.sqrt(2.0f) * kml * (float) Math.sin(-m * phi)
+                    * EvalLegendrePolynomial(l, -m, (float) Math.cos(theta));
+        } else {
+            return kml * EvalLegendrePolynomial(l, 0, (float) Math.cos(theta));
+        }
+    }
+
+
+
+    static public float Factorial(int n) {
+        float[] factorial_cache = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800};
+        if (n<factorial_cache.length) return factorial_cache[n];
+        else {
+            float s = factorial_cache[kCacheSize-1];
+            for (int i=kCacheSize; i<=n; i+=1) {
+                s*=i;
+            }
+            return s;
+        }
+    }
+
+    static public float DoubleFactorial(int n) {
+        float[] dbl_factorial_cache = {1, 1, 2, 3, 8, 15, 48, 105, 384, 945, 3840, 10395};
+        if (n < kCacheSize) return dbl_factorial_cache[n];
+        else {
+            float s = dbl_factorial_cache[kCacheSize - (n % 2 == 0 ? 2 : 1)];
+            float x = n;
+            while (x >= kCacheSize) {
+                s *= x;
+                x -= 2.0f;
+            }
+            return s;
+        }
+    }
+
+    static public float EvalLegendrePolynomial(int l, int m, float x) {
+        // Compute Pmm(x) = (-1)^m(2m - 1)!!(1 - x^2)^(m/2), where !! is the double factorial.
+        float pmm = 1.0f;
+        // P00 is defined as 1.0, do don't evaluate Pmm unless we know m > 0
+        if (m > 0) {
+            float sign = (m % 2 == 0 ? 1 : -1);
+            pmm = sign * DoubleFactorial(2 * m - 1)
+                    * (float) Math.pow(1.0f - x * x, m / 2.0f);
+        }
+
+        if (l == m) {
+            // Pml is the same as Pmm so there's no lifting to higher bands needed
+            return pmm;
+        }
+
+        // Compute Pmm+1(x) = x(2m + 1)Pmm(x)
+        float pmm1 = x * (2 * m + 1) * pmm;
+        if (l == m + 1) {
+            // Pml is the same as Pmm+1 so we are done as well
+            return pmm1;
+        }
+
+        // Use the last two computed bands to lift up to the next band until l is
+        // reached, using the recurrence relationship:
+        // Pml(x) = (x(2l - 1)Pml-1 - (l + m - 1)Pml-2) / (l - m)
+        for (int n = m + 2; n <= l; n++) {
+            float pmn = (x * (2 * n - 1) * pmm1 - (n + m - 1) * pmm) / (n - m);
+            pmm = pmm1;
+            pmm1 = pmn;
+        }
+        // Pmm1 at the end of the above loop is equal to Pml
+        return pmm1;
+    }
+
+    static private float HardcodedSH00(Vector3 d) {
+        return 0.282095f;
+    }
+    static private float HardcodedSH1n1(Vector3 d) {
+        // -sqrt(3/(4pi)) * y
+        return -0.488603f * d.y();
+    }
+
+    static private float HardcodedSH10(Vector3 d) {
+        // sqrt(3/(4pi)) * z
+        return 0.488603f * d.z();
+    }
+
+    static private float HardcodedSH1p1(Vector3 d) {
+        // -sqrt(3/(4pi)) * x
+        return -0.488603f * d.x();
+    }
+
+    static private float HardcodedSH2n2(Vector3 d) {
+        // 0.5 * sqrt(15/pi) * x * y
+        return 1.092548f * d.x() * d.y();
+    }
+
+    static private float HardcodedSH2n1(Vector3 d) {
+        // -0.5 * sqrt(15/pi) * y * z
+        return -1.092548f * d.y() * d.z();
+    }
+
+    static private float HardcodedSH20(Vector3 d) {
+        // 0.25 * sqrt(5/pi) * (-x^2-y^2+2z^2)
+        return 0.315392f * (-d.x() * d.x() - d.y() * d.y() + 2.0f * d.z() * d.z());
+    }
+
+    static private float HardcodedSH2p1(Vector3 d) {
+        // -0.5 * sqrt(15/pi) * x * z
+        return -1.092548f * d.x() * d.z();
+    }
+
+    static private float HardcodedSH2p2(Vector3 d) {
+        // 0.25 * sqrt(15/pi) * (x^2 - y^2)
+        return 0.546274f * (d.x() * d.x() - d.y() * d.y());
+    }
+
+    static private float HardcodedSH3n3(Vector3 d) {
+        // -0.25 * sqrt(35/(2pi)) * y * (3x^2 - y^2)
+        return -0.590044f * d.y() * (3.0f * d.x() * d.x() - d.y() * d.y());
+    }
+
+    static private float HardcodedSH3n2(Vector3 d) {
+        // 0.5 * sqrt(105/pi) * x * y * z
+        return 2.890611f * d.x() * d.y() * d.z();
+    }
+
+    static private float HardcodedSH3n1(Vector3 d) {
+        // -0.25 * sqrt(21/(2pi)) * y * (4z^2-x^2-y^2)
+        return -0.457046f * d.y() * (4.0f * d.z() * d.z() - d.x() * d.x()
+                - d.y() * d.y());
+    }
+
+    static private float HardcodedSH30(Vector3 d) {
+        // 0.25 * sqrt(7/pi) * z * (2z^2 - 3x^2 - 3y^2)
+        return 0.373176f * d.z() * (2.0f * d.z() * d.z() - 3.0f * d.x() * d.x()
+                - 3.0f * d.y() * d.y());
+    }
+
+    static private float HardcodedSH3p1(Vector3 d) {
+        // -0.25 * sqrt(21/(2pi)) * x * (4z^2-x^2-y^2)
+        return -0.457046f * d.x() * (4.0f * d.z() * d.z() - d.x() * d.x()
+                - d.y() * d.y());
+    }
+
+    static private float HardcodedSH3p2(Vector3 d) {
+        // 0.25 * sqrt(105/pi) * z * (x^2 - y^2)
+        return 1.445306f * d.z() * (d.x() * d.x() - d.y() * d.y());
+    }
+
+    static private float HardcodedSH3p3(Vector3 d) {
+        // -0.25 * sqrt(35/(2pi)) * x * (x^2-3y^2)
+        return -0.590044f * d.x() * (d.x() * d.x() - 3.0f * d.y() * d.y());
+    }
+
+    static private float HardcodedSH4n4(Vector3 d) {
+        // 0.75 * sqrt(35/pi) * x * y * (x^2-y^2)
+        return 2.503343f * d.x() * d.y() * (d.x() * d.x() - d.y() * d.y());
+    }
+
+    static private float HardcodedSH4n3(Vector3 d) {
+        // -0.75 * sqrt(35/(2pi)) * y * z * (3x^2-y^2)
+        return -1.770131f * d.y() * d.z() * (3.0f * d.x() * d.x() - d.y() * d.y());
+    }
+
+    static private float HardcodedSH4n2(Vector3 d) {
+        // 0.75 * sqrt(5/pi) * x * y * (7z^2-1)
+        return 0.946175f * d.x() * d.y() * (7.0f * d.z() * d.z() - 1.0f);
+    }
+
+    static private float HardcodedSH4n1(Vector3 d) {
+        // -0.75 * sqrt(5/(2pi)) * y * z * (7z^2-3)
+        return -0.669047f * d.y() * d.z() * (7.0f * d.z() * d.z() - 3.0f);
+    }
+
+    static private float HardcodedSH40(Vector3 d) {
+        // 3/16 * sqrt(1/pi) * (35z^4-30z^2+3)
+        float z2 = d.z() * d.z();
+        return 0.105786f * (35.0f * z2 * z2 - 30.0f * z2 + 3.0f);
+    }
+
+    static private float HardcodedSH4p1(Vector3 d) {
+        // -0.75 * sqrt(5/(2pi)) * x * z * (7z^2-3)
+        return -0.669047f * d.x() * d.z() * (7.0f * d.z() * d.z() - 3.0f);
+    }
+
+    static private float HardcodedSH4p2(Vector3 d) {
+        // 3/8 * sqrt(5/pi) * (x^2 - y^2) * (7z^2 - 1)
+        return 0.473087f * (d.x() * d.x() - d.y() * d.y())
+                * (7.0f * d.z() * d.z() - 1.0f);
+    }
+
+    static private float HardcodedSH4p3(Vector3 d) {
+        // -0.75 * sqrt(35/(2pi)) * x * z * (x^2 - 3y^2)
+        return -1.770131f * d.x() * d.z() * (d.x() * d.x() - 3.0f * d.y() * d.y());
+    }
+
+    static private float HardcodedSH4p4(Vector3 d) {
+        // 3/16*sqrt(35/pi) * (x^2 * (x^2 - 3y^2) - y^2 * (3x^2 - y^2))
+        float x2 = d.x() * d.x();
+        float y2 = d.y() * d.y();
+        return 0.625836f * (x2 * (x2 - 3.0f * y2) - y2 * (3.0f * x2 - y2));
+    }
+}

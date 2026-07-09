@@ -1,12 +1,9 @@
 package org.example.engine.material;
 
 import org.example.engine.math.Matrix4;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.gameobject.GameObject;
-import  org.example.engine.light.Light;
 
 public class ShadowMaterial extends Material {
-    Light lightSource;
+    private static final int MAX_BONES = 100;
 
     public ShadowMaterial(String frag) {
         super(frag);
@@ -16,24 +13,33 @@ public class ShadowMaterial extends Material {
         super(frag, vert);
     }
 
-    public ShadowMaterial setLight(Light l) {
-        lightSource = l;
-        return this;
-    }
-
-
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
-        Matrix4 model = go.localToWorld();
-        Matrix4 shadowMatrix = lightSource.getProjectionMatrix().mult(lightSource.getViewMatrix());
-        setMatrix4ToUniform("modelMatrix", model);
+    public void run(MaterialRenderData data) {
+        if (data == null || data.modelMatrix == null) {
+            return;
+        }
+
+        Matrix4 shadowMatrix = data.lightSpaceMatrix == null
+                ? Matrix4.Identity()
+                : data.lightSpaceMatrix;
+
+        setMatrix4ToUniform("modelMatrix", data.modelMatrix);
         setMatrix4ToUniform("shadowMatrix", shadowMatrix);
-        setVector3ToUniform("lightPos", lightSource.transform.position);
-        setFloatToUniform("lightFar", lightSource.getLightFar());
+        setVector3ToUniform("lightPos", data.lightPosition);
+        setFloatToUniform("lightFar", data.lightFar);
+        applySkinningUniforms(data.boneMatrices);
     }
 
     @Override
     public void cleanup() {
 
+    }
+
+    protected void applySkinningUniforms(Matrix4[] boneMatrices) {
+        boolean useSkinning = boneMatrices != null && boneMatrices.length > 0;
+        setIntToUniform("useSkinning", useSkinning ? 1 : 0);
+        if (useSkinning) {
+            setMatrix4ArrayToUniform("boneMatrices[0]", boneMatrices, MAX_BONES);
+        }
     }
 }

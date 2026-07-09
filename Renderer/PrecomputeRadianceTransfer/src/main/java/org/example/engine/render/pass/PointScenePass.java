@@ -1,6 +1,7 @@
-package org.example.engine.rendererPass;
+package org.example.engine.render.pass;
 
 import org.example.engine.gl.*;
+import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PointLightMaterial;
 import org.example.engine.render.GBuffer;
@@ -19,9 +20,14 @@ public class PointScenePass extends RenderPass {
                 .setNormalTex(gBuffer.normal)
                 .setPositionTex(gBuffer.position);
         pointLightMaterial.setDepthTex(shadowDepth);
-        pointLightMaterial.setLight(light);
-        Camera camera = ctx.camera;
-        camera.runWithMaterial(ctx, pointLightMaterial);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = light;
+        try {
+            Camera camera = ctx.camera;
+            camera.runWithMaterial(ctx, pointLightMaterial);
+        } finally {
+            ctx.activeLight = previousLight;
+        }
     }
 }
 

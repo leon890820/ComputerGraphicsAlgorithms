@@ -1,9 +1,8 @@
-package org.example.engine.rendererPass;
+package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.light.Light;
-import org.example.engine.material.Material;
 import org.example.engine.render.GBuffer;
 import org.example.engine.render.RenderContext;
 
@@ -35,12 +34,14 @@ public class GBufferPass extends RenderPass {
         Light primaryLight = ctx.scene.getLights().isEmpty()
                 ? null
                 : ctx.scene.getLights().get(0);
-        for (GameObject go : ctx.scene.getObjects()) {
-            Material mat = go.getMaterial();
-            if (mat != null && primaryLight != null) {
-                mat.setLight(primaryLight);
+        Light previousLight = ctx.activeLight;
+        ctx.activeLight = primaryLight;
+        try {
+            for (GameObject go : ctx.scene.getObjects()) {
+                go.run(ctx);
             }
-            go.run(ctx);
+        } finally {
+            ctx.activeLight = previousLight;
         }
         gBuffer.unbindFrameBuffer(ctx.screenWidth, ctx.screenHeight);
     }

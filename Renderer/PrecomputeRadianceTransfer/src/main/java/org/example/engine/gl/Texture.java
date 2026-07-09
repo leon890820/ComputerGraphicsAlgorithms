@@ -87,6 +87,15 @@ public class Texture {
         setTexture(path);
     }
 
+    public Texture(ByteBuffer encodedImageBytes, boolean flipY, boolean useMipmap) {
+        this();
+
+        this.flipYOnUpload = flipY;
+        this.useMipmap = useMipmap;
+
+        setTexture(encodedImageBytes);
+    }
+
     public Texture setFlipYOnUpload(boolean flipY) {
         this.flipYOnUpload = flipY;
         return this;
@@ -182,6 +191,63 @@ public class Texture {
         } catch (Exception e) {
             throw new RuntimeException("[Texture] Failed to load image: " + path, e);
         }
+    }
+
+    public Texture setTexture(ByteBuffer encodedImageBytes) {
+        if (encodedImageBytes == null) {
+            System.out.println("[Texture] Failed to load image from memory: buffer is null");
+            return this;
+        }
+
+        STBImage.stbi_set_flip_vertically_on_load(flipYOnUpload);
+
+        IntBuffer w = MemoryUtil.memAllocInt(1);
+        IntBuffer h = MemoryUtil.memAllocInt(1);
+        IntBuffer channels = MemoryUtil.memAllocInt(1);
+
+        ByteBuffer image = STBImage.stbi_load_from_memory(
+                encodedImageBytes,
+                w,
+                h,
+                channels,
+                4
+        );
+
+        if (image == null) {
+            System.out.println("[Texture] STB memory load failed: " + STBImage.stbi_failure_reason());
+
+            MemoryUtil.memFree(w);
+            MemoryUtil.memFree(h);
+            MemoryUtil.memFree(channels);
+
+            return this;
+        }
+
+        width = w.get(0);
+        height = h.get(0);
+
+        uploadImageToGPU(image, width, height);
+
+        STBImage.stbi_image_free(image);
+
+        MemoryUtil.memFree(w);
+        MemoryUtil.memFree(h);
+        MemoryUtil.memFree(channels);
+
+        return this;
+    }
+
+    public Texture setRawRGBA(ByteBuffer pixels, int w, int h) {
+        if (pixels == null || w <= 0 || h <= 0) {
+            System.out.println("[Texture] raw RGBA upload failed: invalid input");
+            return this;
+        }
+
+        width = w;
+        height = h;
+        uploadImageToGPU(pixels, width, height);
+
+        return this;
     }
 
     private void uploadImageToGPU(ByteBuffer image, int w, int h) {

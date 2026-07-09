@@ -1,6 +1,6 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.PhongObject;
+import org.example.engine.gameobject.MeshObject;
 import org.example.engine.gl.Texture;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PhongMaterial;
@@ -27,16 +27,16 @@ public class SceneB implements IScene {
         PhongMaterial objectMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        PhongObject leftObject =
-                new PhongObject("/meshes/Furina/Furina", objectMaterial);
+        MeshObject leftObject =
+                new MeshObject("/meshes/Furina/Furina", objectMaterial);
         leftObject.setScale(0.8f, 0.8f, 0.8f)
                 .setPosition(-1.2f, 0.0f, 0.0f);
 
         PhongMaterial rightMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        PhongObject rightObject =
-                new PhongObject("/meshes/Furina/Furina", rightMaterial);
+        MeshObject rightObject =
+                new MeshObject("/meshes/Furina/Furina", rightMaterial);
         rightObject.setScale(0.8f, 0.8f, 0.8f)
                 .setPosition(1.2f, 0.0f, -0.5f);
 
@@ -44,14 +44,10 @@ public class SceneB implements IScene {
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
         floorMaterial.setTexture(new Texture("/textures/test.png"));
 
-        PhongObject floor = new PhongObject("/meshes/quad", floorMaterial);
+        MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);
         floor.setEular(3.1415926f / 2, 0, 0)
                 .setScale(4, 4, 4)
                 .setPosition(0, -0.1f, 0);
-
-        leftObject.setScene(scene);
-        rightObject.setScene(scene);
-        floor.setScene(scene);
 
         scene.addObject(leftObject);
         scene.addObject(rightObject);

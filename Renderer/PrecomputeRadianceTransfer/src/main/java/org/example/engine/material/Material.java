@@ -3,16 +3,13 @@ package org.example.engine.material;
 import org.example.engine.gl.Shader;
 import org.example.engine.gl.Texture;
 import org.example.engine.gl.TextureCube;
-import org.example.engine.light.Light;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.gameobject.GameObject;
-import org.example.engine.render.RenderContext;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;
+import java.util.Set;
 
 import static org.lwjgl.opengl.GL33.*;
 
@@ -22,8 +19,7 @@ public abstract class Material {
 
     private final HashMap<String, Integer> uniformCache = new HashMap<>();
     private final FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
-
-    Light lightSource;
+    private FloatBuffer matrixArrayBuffer;
 
     public Material(String frag) {
         shader = new Shader(frag);
@@ -95,6 +91,44 @@ public abstract class Material {
         glUniformMatrix4fv(location, false, writeMatrixToBuffer(m));
     }
 
+    public void setMatrix4ArrayToUniform(String name, Matrix4[] matrices, int maxCount) {
+        int location = getUniformLocation(name);
+        if (location < 0 || matrices == null || matrices.length == 0 || maxCount <= 0) return;
+
+        int count = Math.min(matrices.length, maxCount);
+        FloatBuffer buffer = ensureMatrixArrayBuffer(count * 16);
+
+        for (int i = 0; i < count; i++) {
+            Matrix4 matrix = matrices[i];
+            if (matrix == null) {
+                putIdentityMatrix(buffer);
+            } else {
+                buffer.put(matrix.m);
+            }
+        }
+
+        buffer.rewind();
+        glUniformMatrix4fv(location, false, buffer);
+    }
+
+    private void putIdentityMatrix(FloatBuffer buffer) {
+        for (int i = 0; i < 16; i++) {
+            buffer.put(i == 0 || i == 5 || i == 10 || i == 15 ? 1.0f : 0.0f);
+        }
+    }
+
+    private FloatBuffer ensureMatrixArrayBuffer(int requiredFloats) {
+        if (matrixArrayBuffer == null || matrixArrayBuffer.capacity() < requiredFloats) {
+            if (matrixArrayBuffer != null) {
+                MemoryUtil.memFree(matrixArrayBuffer);
+            }
+            matrixArrayBuffer = MemoryUtil.memAllocFloat(requiredFloats);
+        }
+
+        matrixArrayBuffer.clear();
+        return matrixArrayBuffer;
+    }
+
     public void setVector4ToUniform(String name, float x, float y, float z, float w) {
         int location = getUniformLocation(name);
         if (location < 0) return;
@@ -147,22 +181,20 @@ public abstract class Material {
         shader.unbind();
     }
 
-    public Material setLight(Light l) {
-        lightSource = l;
-        return this;
-    }
-
-    public abstract void run(GameObject go, SubMesh subMesh);
-
-    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
-        run(go, subMesh);
-    }
+    public abstract void run(MaterialRenderData data);
 
     public void cleanup() {
     }
 
+    public void collectTextures(Set<Texture> textures) {
+    }
+
     public void dispose() {
         MemoryUtil.memFree(matrixBuffer);
+        if (matrixArrayBuffer != null) {
+            MemoryUtil.memFree(matrixArrayBuffer);
+            matrixArrayBuffer = null;
+        }
         if (shader != null) {
             shader.delete();
             shader = null;

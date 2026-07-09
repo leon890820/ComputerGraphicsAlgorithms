@@ -59,7 +59,6 @@ public class SSRMaterial extends Material{
     }
 
     @Override
-    @Override
     public void run(MaterialRenderData data) {
         if (data == null || data.modelMatrix == null || data.viewMatrix == null || data.projectionMatrix == null) {
             System.out.println("[SSRMaterial] render data is missing camera or model matrix.");

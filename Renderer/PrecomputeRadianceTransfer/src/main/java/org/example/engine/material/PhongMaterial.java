@@ -1,14 +1,12 @@
 package org.example.engine.material;
 
 import org.example.engine.gl.Texture;
-import org.example.engine.math.Matrix4;
-import org.example.engine.math.Vector3;
-import org.example.engine.mesh.SubMesh;
-import org.example.engine.gameobject.GameObject;
-import org.example.engine.render.RenderContext;
-import org.example.engine.scene.Camera;
+
+import java.util.Set;
 
 public class PhongMaterial extends Material {
+
+    private static final int MAX_BONES = 100;
 
     Texture texture;
 
@@ -26,38 +24,31 @@ public class PhongMaterial extends Material {
     }
 
     @Override
-    public void run(GameObject go, SubMesh subMesh) {
-        run(null, go, subMesh);
-    }
-
-    @Override
-    public void run(RenderContext ctx, GameObject go, SubMesh subMesh) {
-        if (ctx == null || ctx.camera == null) {
-            System.out.println("[PhongMaterial] RenderContext camera is not set.");
+    public void run(MaterialRenderData data) {
+        if (data == null || data.modelMatrix == null || data.mvpMatrix == null) {
+            System.out.println("[PhongMaterial] render data is missing model or MVP matrix.");
             return;
         }
 
-        Matrix4 model = go.localToWorld();
-        Camera camera = ctx.camera;
-        Matrix4 mvp = camera.Matrix().mult(model);
+        setMatrix4ToUniform("MVP", data.mvpMatrix);
+        setMatrix4ToUniform("modelMatrix", data.modelMatrix);
 
-        setMatrix4ToUniform("MVP", mvp);
-        setMatrix4ToUniform("modelMatrix", model);
-
-        setVector3ToUniform("ambient_light", new Vector3(0.5f,0.5f,0.5f));
-
-        setVector3ToUniform("view_pos", camera.transform.position);
-
-        setVector3ToUniform("light_color", lightSource.light_color);
-        setVector3ToUniform("light_dir", lightSource.light_dir);
-        setVector3ToUniform("light_color", lightSource.light_color);
-
-
-        Texture useTex = texture;
-
-        if (useTex == null && subMesh != null) {
-            useTex = subMesh.textureKa;
+        boolean useSkinning = data.boneMatrices != null && data.boneMatrices.length > 0;
+        setIntToUniform("useSkinning", useSkinning ? 1 : 0);
+        if (useSkinning) {
+            setMatrix4ArrayToUniform("boneMatrices[0]", data.boneMatrices, MAX_BONES);
         }
+
+        setVector3ToUniform("ambient_light", 0.5f, 0.5f, 0.5f);
+
+        setVector3ToUniform("view_pos", data.viewPosition);
+
+        if (data.hasLight) {
+            setVector3ToUniform("light_color", data.lightColor);
+            setVector3ToUniform("light_dir", data.lightDirection);
+        }
+
+        Texture useTex = texture != null ? texture : data.baseColorTexture;
 
         if (useTex != null && useTex.isUploaded()) {
 
@@ -68,5 +59,12 @@ public class PhongMaterial extends Material {
     @Override
     public void cleanup() {
         unbindTexture(0);
+    }
+
+    @Override
+    public void collectTextures(Set<Texture> textures) {
+        if (texture != null) {
+            textures.add(texture);
+        }
     }
 }
