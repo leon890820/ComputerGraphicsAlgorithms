@@ -28,8 +28,16 @@ public class ObjLoader {
 
     String currentMaterialName = "default";
     String objBasePath = null;
+    boolean loadTextures = true;
 
     Mesh mesh;
+
+    public ObjLoader() {
+    }
+
+    public ObjLoader(boolean loadTextures) {
+        this.loadTextures = loadTextures;
+    }
 
     public Mesh load(String fname) {
         resetSourceData();
@@ -90,7 +98,9 @@ public class ObjLoader {
 
         mesh.reCaculateNormal();
         releaseSourceData();
-        assignTexturesToSubMeshes();
+        if (loadTextures) {
+            assignTexturesToSubMeshes();
+        }
 
         return mesh;
     }

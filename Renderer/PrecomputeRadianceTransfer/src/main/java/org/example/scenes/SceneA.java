@@ -1,19 +1,19 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.MeshObject;
-import org.example.engine.gl.Texture;
+import org.example.engine.gameobject.PRTObject;
 import org.example.engine.light.PointLight;
-import org.example.engine.material.PhongMaterial;
 import org.example.engine.math.Vector3;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
 public class SceneA implements IScene {
+    private static final String FURINA_MESH = "/meshes/Furina/Furina";
+
     private PointLight light;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
-        Camera.GH_FOV = 60.0f;
+        Camera.GH_FOV = 75.0f;
         camera.setSize(screenWidth, screenHeight, 0.1f, 1000.0f);
 
         Scene scene = new Scene();
@@ -24,26 +24,13 @@ public class SceneA implements IScene {
                 new Vector3(0.8f, 0.8f, 0.8f)
         );
 
-        PhongMaterial phongMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        MeshObject phongObject =
-                new MeshObject("/meshes/Furina/Furina", phongMaterial);
-
-        PhongMaterial floorMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        Texture floorTexture = new Texture("/textures/Floor.png");
-        floorMaterial.setTexture(floorTexture);
-
-        MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);
-        floor.setEular(3.1415926f / 2, 0, 0)
-                .setScale(5, 5, 5)
-                .setPosition(0, 0, 0);
-
-        scene.addObject(phongObject);
-        scene.addObject(floor);
         scene.addLight(light);
+
+        PRTObject furina = new PRTObject(FURINA_MESH);
+        furina.setPosition(0.0f, 0.0f, 0.0f);
+        furina.setScale(1f, 1f, 1f);
+
+        scene.addObject(furina);
 
         return scene;
     }

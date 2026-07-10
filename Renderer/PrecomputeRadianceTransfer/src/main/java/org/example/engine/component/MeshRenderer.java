@@ -33,6 +33,8 @@ public class MeshRenderer {
     FloatBuffer boneWeightBuffer;
     float[] boneWeights;
 
+    FloatBuffer[] prtBuffers;
+
     IntBuffer indexBuffer;
     int[] indices;
 
@@ -49,6 +51,9 @@ public class MeshRenderer {
     private static final int VBO_UV      = 3;
     private static final int VBO_BONE_ID = 4;
     private static final int VBO_BONE_WEIGHT = 5;
+    private static final int VBO_PRT0 = 6;
+    private static final int VBO_PRT1 = 7;
+    private static final int VBO_PRT2 = 8;
 
     private static final int ATTRIB_POS     = 0;
     private static final int ATTRIB_NORMAL  = 1;
@@ -56,6 +61,9 @@ public class MeshRenderer {
     private static final int ATTRIB_TANGENT = 3;
     private static final int ATTRIB_BONE_ID = 4;
     private static final int ATTRIB_BONE_WEIGHT = 5;
+    private static final int ATTRIB_PRT0 = 6;
+    private static final int ATTRIB_PRT1 = 7;
+    private static final int ATTRIB_PRT2 = 8;
 
     public MeshRenderer() {
     }
@@ -107,7 +115,7 @@ public class MeshRenderer {
         count = indices.length;
 
         vao = MemoryUtil.memAllocInt(1);
-        vbo = MemoryUtil.memAllocInt(6);
+        vbo = MemoryUtil.memAllocInt(9);
         ebo = MemoryUtil.memAllocInt(1);
 
         glGenVertexArrays(vao);
@@ -161,6 +169,8 @@ public class MeshRenderer {
             }
         }
 
+        pushPRTDataIfAvailable();
+
         indexBuffer = MemoryUtil.memAllocInt(indices.length);
         setIntBuffer(indexBuffer, indices);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.get(0));
@@ -205,6 +215,33 @@ public class MeshRenderer {
         );
 
         glEnableVertexAttribArray(attribLoc);
+    }
+
+    private void pushPRTDataIfAvailable() {
+        int vertexCount = positions.length / 3;
+        if (subMesh.prtBands != 3 || subMesh.prtCoefficients == null
+                || subMesh.prtCoefficients.length != vertexCount * 9) {
+            return;
+        }
+
+        prtBuffers = new FloatBuffer[3];
+        int[] attribs = {ATTRIB_PRT0, ATTRIB_PRT1, ATTRIB_PRT2};
+        int[] vboIndices = {VBO_PRT0, VBO_PRT1, VBO_PRT2};
+
+        for (int group = 0; group < 3; group++) {
+            float[] values = new float[vertexCount * 3];
+            for (int v = 0; v < vertexCount; v++) {
+                int src = v * 9 + group * 3;
+                int dst = v * 3;
+                values[dst] = subMesh.prtCoefficients[src];
+                values[dst + 1] = subMesh.prtCoefficients[src + 1];
+                values[dst + 2] = subMesh.prtCoefficients[src + 2];
+            }
+
+            prtBuffers[group] = allocateDirectFloatBuffer(values.length);
+            setBuffer(prtBuffers[group], values);
+            pushVertexAttribData(attribs[group], vboIndices[group], prtBuffers[group], values.length, 3, 0);
+        }
     }
 
     public void setBuffer(FloatBuffer buffer, float[] data) {
@@ -310,6 +347,15 @@ public class MeshRenderer {
         if (boneWeightBuffer != null) {
             MemoryUtil.memFree(boneWeightBuffer);
             boneWeightBuffer = null;
+        }
+
+        if (prtBuffers != null) {
+            for (FloatBuffer buffer : prtBuffers) {
+                if (buffer != null) {
+                    MemoryUtil.memFree(buffer);
+                }
+            }
+            prtBuffers = null;
         }
 
         if (indexBuffer != null) {

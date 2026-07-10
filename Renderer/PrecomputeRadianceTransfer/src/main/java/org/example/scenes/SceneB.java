@@ -1,15 +1,12 @@
 package org.example.scenes;
 
-import org.example.engine.gameobject.MeshObject;
-import org.example.engine.gl.Texture;
-import org.example.engine.light.PointLight;
-import org.example.engine.material.PhongMaterial;
-import org.example.engine.math.Vector3;
+import org.example.engine.gameobject.PRTObject;
+import org.example.engine.material.PRTMaterial;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
 public class SceneB implements IScene {
-    private PointLight light;
+    private static final String BUDDHA_MESH = "/meshes/Buddha/buddha";
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -19,55 +16,18 @@ public class SceneB implements IScene {
         Scene scene = new Scene();
         scene.setCamera(camera);
 
-        light = new PointLight(
-                new Vector3(-6, 6, 4),
-                new Vector3(0.4f, 0.7f, 1.0f)
-        );
+        PRTObject buddha = new PRTObject(BUDDHA_MESH, new PRTMaterial(), 3, 512);
+        buddha.setScale(1.0f, 1.0f, 1.0f)
+                .setPosition(0.0f, 0.0f, 0.0f)
+                .setEular(0.0f, 3.14f, 0.0f);
 
-        PhongMaterial objectMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        MeshObject leftObject =
-                new MeshObject("/meshes/Furina/Furina", objectMaterial);
-        leftObject.setScale(0.8f, 0.8f, 0.8f)
-                .setPosition(-1.2f, 0.0f, 0.0f);
-
-        PhongMaterial rightMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-
-        MeshObject rightObject =
-                new MeshObject("/meshes/Furina/Furina", rightMaterial);
-        rightObject.setScale(0.8f, 0.8f, 0.8f)
-                .setPosition(1.2f, 0.0f, -0.5f);
-
-        PhongMaterial floorMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
-        floorMaterial.setTexture(new Texture("/textures/test.png"));
-
-        MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);
-        floor.setEular(3.1415926f / 2, 0, 0)
-                .setScale(4, 4, 4)
-                .setPosition(0, -0.1f, 0);
-
-        scene.addObject(leftObject);
-        scene.addObject(rightObject);
-        scene.addObject(floor);
-        scene.addLight(light);
+        scene.addObject(buddha);
 
         return scene;
     }
 
     @Override
     public void update(float time) {
-        if (light == null) {
-            return;
-        }
-
-        light.setPosition(
-                (float) Math.sin(time) * 6,
-                6f,
-                (float) Math.cos(time) * 6
-        );
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.example.engine.component.Animator;
 import org.example.engine.importer.DefaultMeshAssetLoader;
 import org.example.engine.importer.LoadedMeshAsset;
 import org.example.engine.importer.MeshAssetLoader;
+import org.example.engine.mesh.Mesh;
 
 public class MeshObject extends GameObject {
 
@@ -43,9 +44,15 @@ public class MeshObject extends GameObject {
                 ? new Animator(asset)
                 : null);
 
-        setMesh(loaded.getMesh());
+        Mesh mesh = loaded.getMesh();
+        afterMeshLoaded(path, mesh);
+
+        setMesh(mesh);
         buildSubMeshRenderers(mat);
         return this;
+    }
+
+    protected void afterMeshLoaded(String path, Mesh mesh) {
     }
 
     public Asset getAsset() {
@@ -56,7 +63,7 @@ public class MeshObject extends GameObject {
         return hasAnimator();
     }
 
-    private MeshAssetLoader getLoader() {
+    protected MeshAssetLoader getLoader() {
         if (loader != null) {
             return loader;
         }

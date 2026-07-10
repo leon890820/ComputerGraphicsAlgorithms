@@ -16,6 +16,9 @@ public class SubMesh {
     public int[] indices = new int[0];
     public int[] boneIds = new int[0];
     public float[] boneWeights = new float[0];
+    public float[] prtCoefficients = new float[0];
+    public int prtBands = 0;
+    public int prtSampleCount = 0;
 
     public Texture textureKa;
     public int skinIndex = -1;

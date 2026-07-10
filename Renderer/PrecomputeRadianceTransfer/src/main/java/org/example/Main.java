@@ -70,10 +70,10 @@ public class Main {
         setupInput(window);
 
         main_camera = new Camera();
-        main_camera.transform.setPosition(0, 1.0f, 3.0f);
+        main_camera.transform.setPosition(0, 0.0f, 2.0f);
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.A);
+        setScene(SceneType.B);
     }
 
     private void draw() {
