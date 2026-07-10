@@ -3,73 +3,90 @@ package org.example.engine.prt;
 import org.example.engine.mesh.Mesh;
 import org.example.engine.mesh.SubMesh;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 public class TransferCache {
 
+    private static final int MAGIC = 0x50525454; // PRTT
+    private static final int VERSION = 1;
+
     public Path cachePath(String meshResourcePath, int bands, int sampleCount) {
+        Path meshDir = resolveMeshDirectory(meshResourcePath);
+        return meshDir.resolve("prt_transfer_bands" + bands + "_samples" + sampleCount + ".bin");
+    }
+
+    public Path legacyTextCachePath(String meshResourcePath, int bands, int sampleCount) {
         Path meshDir = resolveMeshDirectory(meshResourcePath);
         return meshDir.resolve("prt_transfer_bands" + bands + "_samples" + sampleCount + ".txt");
     }
 
     public boolean exists(String meshResourcePath, int bands, int sampleCount) {
-        return Files.exists(cachePath(meshResourcePath, bands, sampleCount));
+        return Files.exists(cachePath(meshResourcePath, bands, sampleCount))
+                || Files.exists(legacyTextCachePath(meshResourcePath, bands, sampleCount));
     }
 
     public ArrayList<TransferData> load(String meshResourcePath, Mesh mesh, int bands, int sampleCount) {
         Path path = cachePath(meshResourcePath, bands, sampleCount);
+        if (!Files.exists(path)) {
+            Path legacyPath = legacyTextCachePath(meshResourcePath, bands, sampleCount);
+            if (Files.exists(legacyPath)) {
+                ArrayList<TransferData> migrated = loadLegacyText(legacyPath, mesh, bands, sampleCount);
+                save(meshResourcePath, mesh, migrated);
+                System.out.println("[TransferCache] Migrated legacy text cache to binary: " + path);
+                return migrated;
+            }
+        }
+
         ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
         ArrayList<TransferData> out = new ArrayList<>();
 
-        try {
-            List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-            int cursor = 0;
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
+            int magic = in.readInt();
+            int version = in.readInt();
+            int fileBands = in.readInt();
+            int fileSampleCount = in.readInt();
+            int subMeshCount = in.readInt();
+
+            if (magic != MAGIC || version != VERSION) {
+                throw new RuntimeException("[TransferCache] Invalid transfer cache header: " + path);
+            }
+
+            if (fileBands != bands || fileSampleCount != sampleCount) {
+                throw new RuntimeException("[TransferCache] Cache setting mismatch: " + path);
+            }
+
+            if (subMeshCount != subMeshes.size()) {
+                throw new RuntimeException("[TransferCache] Submesh count mismatch: file="
+                        + subMeshCount + ", mesh=" + subMeshes.size());
+            }
 
             for (SubMesh subMesh : subMeshes) {
-                int vertexCount = subMesh.getVertexCount();
+                String materialName = in.readUTF();
+                int vertexCount = in.readInt();
+                int coefficientCount = in.readInt();
                 TransferData data = new TransferData(vertexCount, bands, sampleCount);
 
-                while (cursor < lines.size() && !lines.get(cursor).startsWith("submesh ")) {
-                    cursor++;
-                }
-                if (cursor >= lines.size()) {
-                    throw new RuntimeException("[TransferCache] Missing submesh section for " + subMesh.materialName);
-                }
-                cursor++;
-
-                int loadedVertices = 0;
-                while (cursor < lines.size()) {
-                    String line = lines.get(cursor).trim();
-                    if (line.startsWith("submesh ")) {
-                        break;
-                    }
-                    cursor++;
-
-                    if (line.isEmpty() || line.startsWith("#") || line.contains("=")) {
-                        continue;
-                    }
-
-                    String[] parts = line.split("\\s+");
-                    if (parts.length != data.getCoefficientCount() + 1) {
-                        throw new RuntimeException("[TransferCache] Invalid transfer line: " + line);
-                    }
-
-                    int vertexIndex = Integer.parseInt(parts[0]);
-                    for (int k = 0; k < data.getCoefficientCount(); k++) {
-                        data.set(vertexIndex, k, Float.parseFloat(parts[k + 1]));
-                    }
-                    loadedVertices++;
+                if (vertexCount != subMesh.getVertexCount()) {
+                    throw new RuntimeException("[TransferCache] Vertex count mismatch for " + materialName
+                            + ": file=" + vertexCount + ", mesh=" + subMesh.getVertexCount());
                 }
 
-                if (loadedVertices != vertexCount) {
-                    throw new RuntimeException("[TransferCache] Vertex count mismatch for " + subMesh.materialName
-                            + ": file=" + loadedVertices + ", mesh=" + vertexCount);
+                if (coefficientCount != data.getCoefficientCount()) {
+                    throw new RuntimeException("[TransferCache] Coefficient count mismatch for " + materialName);
+                }
+
+                float[] raw = data.raw();
+                for (int i = 0; i < raw.length; i++) {
+                    raw[i] = in.readFloat();
                 }
 
                 out.add(data);
@@ -90,38 +107,97 @@ public class TransferCache {
         Path path = cachePath(meshResourcePath, first.getBands(), first.getSampleCount());
         ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
 
-        StringBuilder out = new StringBuilder();
-        out.append("# Per-vertex unshadowed diffuse PRT transfer coefficients\n");
-        out.append("source=").append(meshResourcePath).append('\n');
-        out.append("bands=").append(first.getBands()).append('\n');
-        out.append("sampleCount=").append(first.getSampleCount()).append('\n');
-        out.append("layout=vertexIndex coeff0 coeff1 ...\n");
-
-        for (int i = 0; i < transferData.size(); i++) {
-            SubMesh subMesh = subMeshes.get(i);
-            TransferData data = transferData.get(i);
-            out.append("submesh ")
-                    .append(i)
-                    .append(' ')
-                    .append(subMesh.materialName)
-                    .append(' ')
-                    .append(data.getVertexCount())
-                    .append('\n');
-
-            for (int v = 0; v < data.getVertexCount(); v++) {
-                out.append(v);
-                for (int k = 0; k < data.getCoefficientCount(); k++) {
-                    out.append(' ').append(String.format(Locale.US, "%.9g", data.get(v, k)));
-                }
-                out.append('\n');
-            }
-        }
-
         try {
             Files.createDirectories(path.getParent());
-            Files.writeString(path, out.toString(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("[TransferCache] Failed to create cache directory: " + path.getParent(), e);
+        }
+
+        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
+            out.writeInt(MAGIC);
+            out.writeInt(VERSION);
+            out.writeInt(first.getBands());
+            out.writeInt(first.getSampleCount());
+            out.writeInt(transferData.size());
+
+            for (int i = 0; i < transferData.size(); i++) {
+                SubMesh subMesh = subMeshes.get(i);
+                TransferData data = transferData.get(i);
+
+                out.writeUTF(subMesh.materialName == null ? "default" : subMesh.materialName);
+                out.writeInt(data.getVertexCount());
+                out.writeInt(data.getCoefficientCount());
+
+                float[] raw = data.raw();
+                for (float value : raw) {
+                    out.writeFloat(value);
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException("[TransferCache] Failed to write cache: " + path, e);
+        }
+    }
+
+    private ArrayList<TransferData> loadLegacyText(Path path, Mesh mesh, int bands, int sampleCount) {
+        ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
+        ArrayList<TransferData> out = new ArrayList<>();
+
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            String pendingSubMeshHeader = null;
+
+            for (SubMesh subMesh : subMeshes) {
+                int vertexCount = subMesh.getVertexCount();
+                TransferData data = new TransferData(vertexCount, bands, sampleCount);
+
+                String line = pendingSubMeshHeader;
+                pendingSubMeshHeader = null;
+
+                while (line != null || (line = reader.readLine()) != null) {
+                    if (line.startsWith("submesh ")) {
+                        break;
+                    }
+                    line = null;
+                }
+
+                if (line == null) {
+                    throw new RuntimeException("[TransferCache] Missing submesh section for " + subMesh.materialName);
+                }
+
+                int loadedVertices = 0;
+                while ((line = reader.readLine()) != null) {
+                    String trimmed = line.trim();
+                    if (trimmed.startsWith("submesh ")) {
+                        pendingSubMeshHeader = trimmed;
+                        break;
+                    }
+
+                    if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.contains("=")) {
+                        continue;
+                    }
+
+                    String[] parts = trimmed.split("\\s+");
+                    if (parts.length != data.getCoefficientCount() + 1) {
+                        throw new RuntimeException("[TransferCache] Invalid transfer line: " + trimmed);
+                    }
+
+                    int vertexIndex = Integer.parseInt(parts[0]);
+                    for (int k = 0; k < data.getCoefficientCount(); k++) {
+                        data.set(vertexIndex, k, Float.parseFloat(parts[k + 1]));
+                    }
+                    loadedVertices++;
+                }
+
+                if (loadedVertices != vertexCount) {
+                    throw new RuntimeException("[TransferCache] Vertex count mismatch for " + subMesh.materialName
+                            + ": file=" + loadedVertices + ", mesh=" + vertexCount);
+                }
+
+                out.add(data);
+            }
+
+            return out;
+        } catch (IOException e) {
+            throw new RuntimeException("[TransferCache] Failed to read legacy cache: " + path, e);
         }
     }
 
