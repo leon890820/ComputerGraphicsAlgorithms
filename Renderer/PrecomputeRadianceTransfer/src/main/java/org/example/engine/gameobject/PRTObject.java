@@ -4,6 +4,7 @@ import org.example.engine.importer.MeshAssetLoader;
 import org.example.engine.material.Material;
 import org.example.engine.material.PRTMaterial;
 import org.example.engine.mesh.Mesh;
+import org.example.engine.prt.PRTBakeMode;
 import org.example.engine.prt.SHCoefficients;
 import org.example.engine.prt.TransferBaker;
 
@@ -12,6 +13,7 @@ public class PRTObject extends MeshObject {
     private String meshPath;
     private int bands = SHCoefficients.DEFAULT_BANDS;
     private int sampleCount = TransferBaker.DEFAULT_SAMPLE_COUNT;
+    private PRTBakeMode bakeMode = PRTBakeMode.UNSHADOW;
 
     public PRTObject(String path) {
         load(path, new PRTMaterial());
@@ -22,8 +24,13 @@ public class PRTObject extends MeshObject {
     }
 
     public PRTObject(String path, PRTMaterial material, int bands, int sampleCount) {
+        this(path, material, bands, sampleCount, PRTBakeMode.UNSHADOW);
+    }
+
+    public PRTObject(String path, PRTMaterial material, int bands, int sampleCount, PRTBakeMode bakeMode) {
         this.bands = bands;
         this.sampleCount = sampleCount;
+        this.bakeMode = bakeMode == null ? PRTBakeMode.UNSHADOW : bakeMode;
         load(path, material);
     }
 
@@ -49,9 +56,13 @@ public class PRTObject extends MeshObject {
         return meshPath;
     }
 
+    public PRTBakeMode getBakeMode() {
+        return bakeMode;
+    }
+
     @Override
     protected void afterMeshLoaded(String path, Mesh mesh) {
         meshPath = path;
-        new TransferBaker().loadOrBake(path, mesh, bands, sampleCount);
+        new TransferBaker().loadOrBake(path, mesh, bands, sampleCount, bakeMode);
     }
 }

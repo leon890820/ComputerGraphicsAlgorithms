@@ -4,9 +4,14 @@ public class TransferData {
 
     private final int bands;
     private final int sampleCount;
+    private final PRTBakeMode bakeMode;
     private final float[] coefficients;
 
     public TransferData(int vertexCount, int bands, int sampleCount) {
+        this(vertexCount, bands, sampleCount, PRTBakeMode.UNSHADOW);
+    }
+
+    public TransferData(int vertexCount, int bands, int sampleCount, PRTBakeMode bakeMode) {
         if (vertexCount < 0) {
             throw new IllegalArgumentException("[TransferData] vertexCount must not be negative.");
         }
@@ -16,6 +21,7 @@ public class TransferData {
 
         this.bands = bands;
         this.sampleCount = sampleCount;
+        this.bakeMode = bakeMode == null ? PRTBakeMode.UNSHADOW : bakeMode;
         this.coefficients = new float[vertexCount * bands * bands];
     }
 
@@ -25,6 +31,10 @@ public class TransferData {
 
     public int getSampleCount() {
         return sampleCount;
+    }
+
+    public PRTBakeMode getBakeMode() {
+        return bakeMode;
     }
 
     public int getCoefficientCount() {

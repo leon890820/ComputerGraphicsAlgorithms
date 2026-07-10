@@ -17,9 +17,19 @@ import java.util.ArrayList;
 public class TransferCache {
 
     private static final int MAGIC = 0x50525454; // PRTT
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
 
     public Path cachePath(String meshResourcePath, int bands, int sampleCount) {
+        return cachePath(meshResourcePath, bands, sampleCount, PRTBakeMode.UNSHADOW);
+    }
+
+    public Path cachePath(String meshResourcePath, int bands, int sampleCount, PRTBakeMode bakeMode) {
+        Path meshDir = resolveMeshDirectory(meshResourcePath);
+        return meshDir.resolve("prt_transfer_" + bakeMode.cacheKey()
+                + "_bands" + bands + "_samples" + sampleCount + ".bin");
+    }
+
+    public Path legacyBinaryCachePath(String meshResourcePath, int bands, int sampleCount) {
         Path meshDir = resolveMeshDirectory(meshResourcePath);
         return meshDir.resolve("prt_transfer_bands" + bands + "_samples" + sampleCount + ".bin");
     }
@@ -30,22 +40,105 @@ public class TransferCache {
     }
 
     public boolean exists(String meshResourcePath, int bands, int sampleCount) {
-        return Files.exists(cachePath(meshResourcePath, bands, sampleCount))
-                || Files.exists(legacyTextCachePath(meshResourcePath, bands, sampleCount));
+        return exists(meshResourcePath, bands, sampleCount, PRTBakeMode.UNSHADOW);
+    }
+
+    public boolean exists(String meshResourcePath, int bands, int sampleCount, PRTBakeMode bakeMode) {
+        if (Files.exists(cachePath(meshResourcePath, bands, sampleCount, bakeMode))) {
+            return true;
+        }
+
+        return bakeMode == PRTBakeMode.UNSHADOW
+                && (Files.exists(legacyBinaryCachePath(meshResourcePath, bands, sampleCount))
+                || Files.exists(legacyTextCachePath(meshResourcePath, bands, sampleCount)));
     }
 
     public ArrayList<TransferData> load(String meshResourcePath, Mesh mesh, int bands, int sampleCount) {
-        Path path = cachePath(meshResourcePath, bands, sampleCount);
-        if (!Files.exists(path)) {
-            Path legacyPath = legacyTextCachePath(meshResourcePath, bands, sampleCount);
-            if (Files.exists(legacyPath)) {
-                ArrayList<TransferData> migrated = loadLegacyText(legacyPath, mesh, bands, sampleCount);
+        return load(meshResourcePath, mesh, bands, sampleCount, PRTBakeMode.UNSHADOW);
+    }
+
+    public ArrayList<TransferData> load(
+            String meshResourcePath,
+            Mesh mesh,
+            int bands,
+            int sampleCount,
+            PRTBakeMode bakeMode
+    ) {
+        Path path = cachePath(meshResourcePath, bands, sampleCount, bakeMode);
+        if (Files.exists(path)) {
+            return loadBinary(path, mesh, bands, sampleCount, bakeMode);
+        }
+
+        if (bakeMode == PRTBakeMode.UNSHADOW) {
+            Path legacyBinary = legacyBinaryCachePath(meshResourcePath, bands, sampleCount);
+            if (Files.exists(legacyBinary)) {
+                ArrayList<TransferData> migrated = loadBinary(legacyBinary, mesh, bands, sampleCount, bakeMode);
+                save(meshResourcePath, mesh, migrated);
+                System.out.println("[TransferCache] Migrated legacy binary cache to mode cache: " + path);
+                return migrated;
+            }
+
+            Path legacyText = legacyTextCachePath(meshResourcePath, bands, sampleCount);
+            if (Files.exists(legacyText)) {
+                ArrayList<TransferData> migrated = loadLegacyText(legacyText, mesh, bands, sampleCount, bakeMode);
                 save(meshResourcePath, mesh, migrated);
                 System.out.println("[TransferCache] Migrated legacy text cache to binary: " + path);
                 return migrated;
             }
         }
 
+        throw new RuntimeException("[TransferCache] Cache does not exist: " + path);
+    }
+
+    public void save(String meshResourcePath, Mesh mesh, ArrayList<TransferData> transferData) {
+        if (transferData == null || transferData.isEmpty()) {
+            return;
+        }
+
+        TransferData first = transferData.get(0);
+        PRTBakeMode bakeMode = first.getBakeMode();
+        Path path = cachePath(meshResourcePath, first.getBands(), first.getSampleCount(), bakeMode);
+        ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
+
+        try {
+            Files.createDirectories(path.getParent());
+        } catch (IOException e) {
+            throw new RuntimeException("[TransferCache] Failed to create cache directory: " + path.getParent(), e);
+        }
+
+        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
+            out.writeInt(MAGIC);
+            out.writeInt(VERSION);
+            out.writeInt(first.getBands());
+            out.writeInt(first.getSampleCount());
+            out.writeUTF(bakeMode.name());
+            out.writeInt(transferData.size());
+
+            for (int i = 0; i < transferData.size(); i++) {
+                SubMesh subMesh = subMeshes.get(i);
+                TransferData data = transferData.get(i);
+
+                out.writeUTF(subMesh.materialName == null ? "default" : subMesh.materialName);
+                out.writeInt(data.getVertexCount());
+                out.writeInt(data.getCoefficientCount());
+
+                float[] raw = data.raw();
+                for (float value : raw) {
+                    out.writeFloat(value);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("[TransferCache] Failed to write cache: " + path, e);
+        }
+    }
+
+    private ArrayList<TransferData> loadBinary(
+            Path path,
+            Mesh mesh,
+            int bands,
+            int sampleCount,
+            PRTBakeMode bakeMode
+    ) {
         ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
         ArrayList<TransferData> out = new ArrayList<>();
 
@@ -54,13 +147,14 @@ public class TransferCache {
             int version = in.readInt();
             int fileBands = in.readInt();
             int fileSampleCount = in.readInt();
+            PRTBakeMode fileBakeMode = version >= 2 ? PRTBakeMode.parse(in.readUTF()) : PRTBakeMode.UNSHADOW;
             int subMeshCount = in.readInt();
 
-            if (magic != MAGIC || version != VERSION) {
+            if (magic != MAGIC || version <= 0 || version > VERSION) {
                 throw new RuntimeException("[TransferCache] Invalid transfer cache header: " + path);
             }
 
-            if (fileBands != bands || fileSampleCount != sampleCount) {
+            if (fileBands != bands || fileSampleCount != sampleCount || fileBakeMode != bakeMode) {
                 throw new RuntimeException("[TransferCache] Cache setting mismatch: " + path);
             }
 
@@ -73,7 +167,7 @@ public class TransferCache {
                 String materialName = in.readUTF();
                 int vertexCount = in.readInt();
                 int coefficientCount = in.readInt();
-                TransferData data = new TransferData(vertexCount, bands, sampleCount);
+                TransferData data = new TransferData(vertexCount, bands, sampleCount, bakeMode);
 
                 if (vertexCount != subMesh.getVertexCount()) {
                     throw new RuntimeException("[TransferCache] Vertex count mismatch for " + materialName
@@ -98,47 +192,13 @@ public class TransferCache {
         }
     }
 
-    public void save(String meshResourcePath, Mesh mesh, ArrayList<TransferData> transferData) {
-        if (transferData == null || transferData.isEmpty()) {
-            return;
-        }
-
-        TransferData first = transferData.get(0);
-        Path path = cachePath(meshResourcePath, first.getBands(), first.getSampleCount());
-        ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
-
-        try {
-            Files.createDirectories(path.getParent());
-        } catch (IOException e) {
-            throw new RuntimeException("[TransferCache] Failed to create cache directory: " + path.getParent(), e);
-        }
-
-        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
-            out.writeInt(MAGIC);
-            out.writeInt(VERSION);
-            out.writeInt(first.getBands());
-            out.writeInt(first.getSampleCount());
-            out.writeInt(transferData.size());
-
-            for (int i = 0; i < transferData.size(); i++) {
-                SubMesh subMesh = subMeshes.get(i);
-                TransferData data = transferData.get(i);
-
-                out.writeUTF(subMesh.materialName == null ? "default" : subMesh.materialName);
-                out.writeInt(data.getVertexCount());
-                out.writeInt(data.getCoefficientCount());
-
-                float[] raw = data.raw();
-                for (float value : raw) {
-                    out.writeFloat(value);
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("[TransferCache] Failed to write cache: " + path, e);
-        }
-    }
-
-    private ArrayList<TransferData> loadLegacyText(Path path, Mesh mesh, int bands, int sampleCount) {
+    private ArrayList<TransferData> loadLegacyText(
+            Path path,
+            Mesh mesh,
+            int bands,
+            int sampleCount,
+            PRTBakeMode bakeMode
+    ) {
         ArrayList<SubMesh> subMeshes = mesh.getAllSubMeshes();
         ArrayList<TransferData> out = new ArrayList<>();
 
@@ -147,7 +207,7 @@ public class TransferCache {
 
             for (SubMesh subMesh : subMeshes) {
                 int vertexCount = subMesh.getVertexCount();
-                TransferData data = new TransferData(vertexCount, bands, sampleCount);
+                TransferData data = new TransferData(vertexCount, bands, sampleCount, bakeMode);
 
                 String line = pendingSubMeshHeader;
                 pendingSubMeshHeader = null;
