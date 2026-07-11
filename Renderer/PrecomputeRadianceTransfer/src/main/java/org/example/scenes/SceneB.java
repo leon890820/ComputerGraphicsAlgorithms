@@ -2,7 +2,9 @@ package org.example.scenes;
 
 import org.example.engine.gameobject.PRTObject;
 import org.example.engine.material.PRTMaterial;
+import org.example.engine.math.Vector3;
 import org.example.engine.prt.PRTBakeMode;
+import org.example.engine.prt.PRTReflectionMode;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
@@ -13,14 +15,23 @@ public class SceneB implements IScene {
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
         Camera.GH_FOV = 60.0f;
         camera.setSize(screenWidth, screenHeight, 0.1f, 1000.0f);
+        Vector3 cameraPosition = new Vector3(0.0f, 0.0f, -2.0f);
+        camera.setPositionOrientation(cameraPosition, 0.0f, (float) Math.PI);
 
         Scene scene = new Scene();
         scene.setCamera(camera);
 
-        PRTObject buddha = new PRTObject(BUDDHA_MESH, new PRTMaterial(), 3, 512, PRTBakeMode.SHADOW);
+        PRTObject buddha = new PRTObject(
+                BUDDHA_MESH,
+                new PRTMaterial(),
+                3,
+                32,
+                PRTBakeMode.SHADOW,
+                PRTReflectionMode.GLOSSY_MATRIX,
+                cameraPosition
+        );
         buddha.setScale(1.0f, 1.0f, 1.0f)
-                .setPosition(0.0f, 0.0f, 0.0f)
-                .setEular(0.0f, 3.14f, 0.0f);
+                .setPosition(0.0f, 0.0f, 0.0f);
 
         scene.addObject(buddha);
 

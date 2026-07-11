@@ -3,6 +3,7 @@ package org.example.engine.mesh;
 import org.example.engine.gl.Texture;
 import org.example.engine.math.Vector3;
 import org.example.engine.prt.PRTBakeMode;
+import org.example.engine.prt.PRTReflectionMode;
 
 import java.util.ArrayList;
 
@@ -21,6 +22,7 @@ public class SubMesh {
     public int prtBands = 0;
     public int prtSampleCount = 0;
     public PRTBakeMode prtBakeMode = PRTBakeMode.UNSHADOW;
+    public PRTReflectionMode prtReflectionMode = PRTReflectionMode.DIFFUSE;
 
     public Texture textureKa;
     public int skinIndex = -1;

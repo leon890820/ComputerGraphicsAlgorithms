@@ -10,5 +10,5 @@ layout(location = 0) out vec4 fragColor;
 
 void main() {
     vec3 albedo = useTexture == 1 ? texture(tex, texCoord).rgb : vec3(1.0);
-    fragColor = vec4(prtColor * albedo * 1.2f, 1.0);
+    fragColor = vec4(prtColor * 1.2, 1.0);
 }

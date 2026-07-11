@@ -10,18 +10,20 @@ public class TransferBakeTool {
         int bands = args.length > 1 ? Integer.parseInt(args[1]) : SHCoefficients.DEFAULT_BANDS;
         int sampleCount = args.length > 2 ? Integer.parseInt(args[2]) : TransferBaker.DEFAULT_SAMPLE_COUNT;
         PRTBakeMode bakeMode = args.length > 3 ? PRTBakeMode.parse(args[3]) : PRTBakeMode.UNSHADOW;
+        PRTReflectionMode reflectionMode = args.length > 4 ? PRTReflectionMode.parse(args[4]) : PRTReflectionMode.DIFFUSE;
 
         Mesh mesh = new ObjLoader(false).load(meshPath);
 
         TransferBaker baker = new TransferBaker();
-        baker.loadOrBake(meshPath, mesh, bands, sampleCount, bakeMode);
+        baker.loadOrBake(meshPath, mesh, bands, sampleCount, bakeMode, reflectionMode);
 
         TransferCache cache = new TransferCache();
         System.out.println("Transfer ready");
         System.out.println("source = " + meshPath);
         System.out.println("mode = " + bakeMode);
+        System.out.println("reflection = " + reflectionMode);
         System.out.println("bands = " + bands);
         System.out.println("sampleCount = " + sampleCount);
-        System.out.println("cache = " + cache.cachePath(meshPath, bands, sampleCount, bakeMode));
+        System.out.println("cache = " + cache.cachePath(meshPath, bands, sampleCount, bakeMode, reflectionMode));
     }
 }

@@ -5,6 +5,8 @@ public class TransferData {
     private final int bands;
     private final int sampleCount;
     private final PRTBakeMode bakeMode;
+    private final PRTReflectionMode reflectionMode;
+    private final int coefficientCount;
     private final float[] coefficients;
 
     public TransferData(int vertexCount, int bands, int sampleCount) {
@@ -12,17 +14,43 @@ public class TransferData {
     }
 
     public TransferData(int vertexCount, int bands, int sampleCount, PRTBakeMode bakeMode) {
+        this(vertexCount, bands, sampleCount, bakeMode, PRTReflectionMode.DIFFUSE);
+    }
+
+    public TransferData(
+            int vertexCount,
+            int bands,
+            int sampleCount,
+            PRTBakeMode bakeMode,
+            PRTReflectionMode reflectionMode
+    ) {
+        this(vertexCount, bands, sampleCount, bakeMode, reflectionMode, bands * bands);
+    }
+
+    public TransferData(
+            int vertexCount,
+            int bands,
+            int sampleCount,
+            PRTBakeMode bakeMode,
+            PRTReflectionMode reflectionMode,
+            int coefficientCount
+    ) {
         if (vertexCount < 0) {
             throw new IllegalArgumentException("[TransferData] vertexCount must not be negative.");
         }
         if (bands <= 0) {
             throw new IllegalArgumentException("[TransferData] bands must be positive.");
         }
+        if (coefficientCount <= 0) {
+            throw new IllegalArgumentException("[TransferData] coefficientCount must be positive.");
+        }
 
         this.bands = bands;
         this.sampleCount = sampleCount;
         this.bakeMode = bakeMode == null ? PRTBakeMode.UNSHADOW : bakeMode;
-        this.coefficients = new float[vertexCount * bands * bands];
+        this.reflectionMode = reflectionMode == null ? PRTReflectionMode.DIFFUSE : reflectionMode;
+        this.coefficientCount = coefficientCount;
+        this.coefficients = new float[vertexCount * coefficientCount];
     }
 
     public int getBands() {
@@ -37,8 +65,12 @@ public class TransferData {
         return bakeMode;
     }
 
+    public PRTReflectionMode getReflectionMode() {
+        return reflectionMode;
+    }
+
     public int getCoefficientCount() {
-        return bands * bands;
+        return coefficientCount;
     }
 
     public int getVertexCount() {

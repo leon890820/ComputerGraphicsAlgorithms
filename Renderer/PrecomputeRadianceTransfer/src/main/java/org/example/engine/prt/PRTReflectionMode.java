@@ -2,14 +2,14 @@ package org.example.engine.prt;
 
 import java.util.Locale;
 
-public enum PRTBakeMode {
-    UNSHADOW("unshadow"),
-    SHADOW("shadow"),
-    INTER_SHADOW("inter_shadow");
+public enum PRTReflectionMode {
+    DIFFUSE("diffuse"),
+    GLOSSY("glossy_v2"),
+    GLOSSY_MATRIX("glossy_matrix_v2");
 
     private final String cacheKey;
 
-    PRTBakeMode(String cacheKey) {
+    PRTReflectionMode(String cacheKey) {
         this.cacheKey = cacheKey;
     }
 
@@ -17,18 +17,18 @@ public enum PRTBakeMode {
         return cacheKey;
     }
 
-    public static PRTBakeMode parse(String value) {
+    public static PRTReflectionMode parse(String value) {
         if (value == null || value.trim().isEmpty()) {
-            return UNSHADOW;
+            return DIFFUSE;
         }
 
         String normalized = value.trim().toUpperCase(Locale.ROOT);
-        for (PRTBakeMode mode : values()) {
+        for (PRTReflectionMode mode : values()) {
             if (mode.name().equals(normalized) || mode.cacheKey.equalsIgnoreCase(value.trim())) {
                 return mode;
             }
         }
 
-        throw new IllegalArgumentException("[PRTBakeMode] Unknown bake mode: " + value);
+        throw new IllegalArgumentException("[PRTReflectionMode] Unknown reflection mode: " + value);
     }
 }
