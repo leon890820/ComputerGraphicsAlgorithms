@@ -32,20 +32,20 @@ public class SceneC implements IScene {
         PhongMaterial guraMaterial =
                 new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
 
-        gura = new MeshObject("../Model/Hololive/gura.glb", guraMaterial);
+        gura = new MeshObject("../../Model/Hololive/gura.glb", guraMaterial);
         gura.playAnimation("smolguraAnimationsRESOURCE");
         gura.setScale(1f, 1f, 1f)
                 .setPosition(-1, 0, 0);
 
-        ame = new MeshObject("../Model/Hololive/ame.glb", guraMaterial);
+        ame = new MeshObject("../../Model/Hololive/ame.glb", guraMaterial);
         ame.playAnimation("smolameAnimationsRESOURCE");
         ame.setPosition(1f, 0f, 0f).setScale(3f, 3f, 3f);
 
-        calli = new MeshObject("../Model/Hololive/calli.glb", guraMaterial);
+        calli = new MeshObject("../../Model/Hololive/calli.glb", guraMaterial);
         calli.playAnimation("smolcalliAnimationsRESOURCE");
         calli.setPosition(3f, 0f, 0f).setScale(1f, 1f, 1f);
 
-        ina = new MeshObject("../Model/Hololive/ina.glb", guraMaterial);
+        ina = new MeshObject("../../Model/Hololive/ina.glb", guraMaterial);
         ina.playAnimation("smolinaAnimationsRESOURCE");
         ina.setPosition(-3f, 0f, 0f).setScale(3f, 3f, 3f);
 

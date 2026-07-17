@@ -17,6 +17,7 @@ public class Renderer {
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
     private final ComputeExamplePass computeExamplePass;
+    private final ParticleExamplePass particleExamplePass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
@@ -27,11 +28,17 @@ public class Renderer {
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
         computeExamplePass = new ComputeExamplePass(screenWidth, screenHeight);
+        particleExamplePass = new ParticleExamplePass();
     }
 
     public void render(RenderContext ctx) {
         if (ctx.scene.getRenderMode() == Scene.RenderMode.COMPUTE_EXAMPLE) {
             computeExamplePass.render(ctx);
+            return;
+        }
+
+        if (ctx.scene.getRenderMode() == Scene.RenderMode.PARTICLE_EXAMPLE) {
+            particleExamplePass.render(ctx);
             return;
         }
 

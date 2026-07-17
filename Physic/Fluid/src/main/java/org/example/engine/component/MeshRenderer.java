@@ -241,6 +241,25 @@ public class MeshRenderer {
         useMat.unbind();
     }
 
+
+    public void renderInstanced(MaterialRenderData data, Material overrideMaterial, int instanceCount) {
+        if (!initialized || vao == null) return;
+        if (data == null || instanceCount <= 0) return;
+
+        Material useMat = overrideMaterial != null ? overrideMaterial : defaultMaterial;
+        if (useMat == null) return;
+
+        useMat.bind();
+        useMat.run(data);
+
+        glBindVertexArray(vao.get(0));
+        glDrawElementsInstanced(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0, instanceCount);
+        glBindVertexArray(0);
+
+        useMat.cleanup();
+        useMat.unbind();
+    }
+
     public void debugRender(MaterialRenderData data) {
         debugRender(data, defaultMaterial);
     }

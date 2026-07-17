@@ -16,7 +16,8 @@ public class Scene {
 
     public enum RenderMode {
         STANDARD,
-        COMPUTE_EXAMPLE
+        COMPUTE_EXAMPLE,
+        PARTICLE_EXAMPLE
     }
 
     public Scene setCamera(Camera cam) {

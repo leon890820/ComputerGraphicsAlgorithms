@@ -290,7 +290,7 @@ public abstract class GameObject {
         return meshRenderers.get(0).getMaterial();
     }
 
-    private MaterialRenderData createMaterialRenderData(
+    protected MaterialRenderData createMaterialRenderData(
             RenderContext ctx,
             MeshRenderer meshRenderer
     ) {
