@@ -1,0 +1,38 @@
+#version 430
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+layout(rgba32f, binding = 0) uniform writeonly image3D volumeImage;
+
+uniform vec3 volumeSize;
+uniform float time;
+
+float sphere(vec3 p, float radius) {
+    return smoothstep(radius, radius - 0.04, length(p));
+}
+
+void main() {
+    ivec3 voxel = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 size = imageSize(volumeImage);
+
+    if (voxel.x >= size.x || voxel.y >= size.y || voxel.z >= size.z) {
+        return;
+    }
+
+    vec3 uvw = (vec3(voxel) + 0.5) / volumeSize;
+    vec3 p = uvw * 2.0 - 1.0;
+
+    float r = length(p);
+    float shell = smoothstep(0.54, 0.50, abs(r - 0.42));
+    float core = sphere(p, 0.26);
+
+    float wave = 0.5 + 0.5 * sin(18.0 * r - time * 3.0 + atan(p.y, p.x) * 4.0);
+    float zBands = 0.5 + 0.5 * sin((uvw.z + time * 0.1) * 24.0);
+
+    vec3 hot = vec3(1.0, 0.34, 0.06);
+    vec3 cold = vec3(0.1, 0.55, 1.0);
+    vec3 color = mix(cold, hot, wave) * shell;
+    color += vec3(0.95, 0.85, 0.35) * core * zBands;
+
+    float alpha = max(shell, core);
+    imageStore(volumeImage, voxel, vec4(color, alpha));
+}
