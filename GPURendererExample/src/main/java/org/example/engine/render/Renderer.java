@@ -5,6 +5,7 @@ import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.light.SpotLight;
 import org.example.engine.render.pass.*;
+import org.example.engine.scene.Scene;
 
 public class Renderer {
     private static final int SHADOW_SIZE = 1024;
@@ -15,6 +16,7 @@ public class Renderer {
     private final ScenePass spotScenePass;
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
+    private final ComputeExamplePass computeExamplePass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
@@ -24,9 +26,15 @@ public class Renderer {
         spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
+        computeExamplePass = new ComputeExamplePass(screenWidth, screenHeight);
     }
 
     public void render(RenderContext ctx) {
+        if (ctx.scene.getRenderMode() == Scene.RenderMode.COMPUTE_EXAMPLE) {
+            computeExamplePass.render(ctx);
+            return;
+        }
+
         gBufferPass.render(ctx);
         GBuffer gBuffer = gBufferPass.getGBuffer();
 

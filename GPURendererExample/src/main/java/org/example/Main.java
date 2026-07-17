@@ -32,14 +32,15 @@ public class Main {
     private Renderer renderer;
     private RenderContext ctx;
     private IScene currentScene;
-    private SceneType currentSceneType = SceneType.A;
+    private SceneType currentSceneType = SceneType.D;
 
     private float a = 0;
 
     private enum SceneType {
         A,
         B,
-        C
+        C,
+        D
     }
 
     public static void main(String[] args) {
@@ -64,7 +65,7 @@ public class Main {
     }
 
     private void setup() {
-        window = new Window(WIDTH, HEIGHT, "Processing Port - GBufferPass");
+        window = new Window(WIDTH, HEIGHT, "GPU Renderer - SceneD Compute Example");
         window.create();
 
         setupInput(window);
@@ -73,7 +74,7 @@ public class Main {
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.C);
+        setScene(SceneType.D);
     }
 
     private void draw() {
@@ -127,6 +128,10 @@ public class Main {
 
             if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
                 setScene(SceneType.C);
+            }
+
+            if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
+                setScene(SceneType.D);
             }
         });
 
@@ -206,8 +211,10 @@ public class Main {
             currentScene = new SceneA();
         } else if (currentSceneType == SceneType.B) {
             currentScene = new SceneB();
-        } else {
+        } else if (currentSceneType == SceneType.C) {
             currentScene = new SceneC();
+        } else {
+            currentScene = new SceneD();
         }
 
         scene = currentScene.load(main_camera, WIDTH, HEIGHT);

@@ -1,84 +1,32 @@
 package org.example.engine.render;
 
-import org.example.engine.light.DirectionalLight;
-import org.example.engine.light.Light;
-import org.example.engine.light.PointLight;
-import org.example.engine.light.SpotLight;
-import org.example.engine.render.pass.*;
-import org.example.engine.scene.Scene;
+import org.example.engine.gl.FBO;
+import org.example.engine.render.pass.PostProcessPass;
+import org.example.engine.render.pass.SkyBoxPass;
+
+import static org.lwjgl.opengl.GL11.GL_LINEAR;
 
 public class Renderer {
-    private static final int SHADOW_SIZE = 1024;
 
-    private final ShadowPass shadowPass;
-    private final PointShadowPass pointShadowPass;
-    private final GBufferPass gBufferPass;
-    private final ScenePass spotScenePass;
-    private final ScenePass directionalScenePass;
-    private final PointScenePass pointScenePass;
-    private final ComputeExamplePass computeExamplePass;
-    private float time;
-
+    private final int screenWidth;
+    private final int screenHeight;
+    private final FBO sceneColorBuffer;
+    private final SkyBoxPass skyBoxPass;
+    private final PostProcessPass postProcessPass;
 
     public Renderer(int screenWidth, int screenHeight) {
-        shadowPass = new ShadowPass(SHADOW_SIZE);
-        pointShadowPass = new PointShadowPass(SHADOW_SIZE);
-        gBufferPass = new GBufferPass(screenWidth, screenHeight);
-        spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
-        directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
-        pointScenePass = new PointScenePass();
-        computeExamplePass = new ComputeExamplePass(32, 32);
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        sceneColorBuffer = new FBO(screenWidth, screenHeight, 1, GL_LINEAR, false);
+        skyBoxPass = new SkyBoxPass();
+        postProcessPass = new PostProcessPass(skyBoxPass.getSkybox());
     }
 
     public void render(RenderContext ctx) {
-        if (ctx.scene.getRenderMode() == Scene.RenderMode.COMPUTE_EXAMPLE) {
-            computeExamplePass.render(ctx, time);
-            time += 0.016f;
-            return;
-        }
+        sceneColorBuffer.bindFrameBuffer();
+        skyBoxPass.render(ctx);
+        sceneColorBuffer.unbindFrameBuffer(screenWidth, screenHeight);
 
-        gBufferPass.render(ctx);
-        GBuffer gBuffer = gBufferPass.getGBuffer();
-
-        for (Light light : ctx.scene.getLights()) {
-            renderLight(ctx, gBuffer, light);
-        }
-    }
-
-    private void renderLight(RenderContext ctx, GBuffer gBuffer, Light light) {
-        if (light instanceof PointLight) {
-            PointLight pointLight = (PointLight) light;
-            pointShadowPass.render(ctx, pointLight);
-            pointScenePass.render(
-                    ctx,
-                    gBuffer,
-                    pointLight,
-                    pointShadowPass.getDepthBuffer()
-            );
-            return;
-        }
-
-        if (light instanceof SpotLight) {
-            SpotLight spotLight = (SpotLight) light;
-            shadowPass.render(ctx, spotLight);
-            spotScenePass.render(
-                    ctx,
-                    gBuffer,
-                    spotLight,
-                    shadowPass.getDepthBuffer()
-            );
-            return;
-        }
-
-        if (light instanceof DirectionalLight) {
-            DirectionalLight directionalLight = (DirectionalLight) light;
-            shadowPass.render(ctx, directionalLight);
-            directionalScenePass.render(
-                    ctx,
-                    gBuffer,
-                    directionalLight,
-                    shadowPass.getDepthBuffer()
-            );
-        }
+        postProcessPass.render(ctx, sceneColorBuffer.getColorTexture(0));
     }
 }

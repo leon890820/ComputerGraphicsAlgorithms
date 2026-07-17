@@ -3,12 +3,14 @@ package org.example.engine.material;
 import org.example.engine.gl.Texture;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
+import org.example.engine.scene.Camera;
 
 public class MaterialRenderData {
 
     public Matrix4 modelMatrix;
     public Matrix4 mvpMatrix;
     public Matrix4[] boneMatrices;
+    public Camera camera;
 
     public Texture baseColorTexture;
 

@@ -311,6 +311,7 @@ public abstract class GameObject {
         }
 
         if (ctx != null && ctx.camera != null) {
+            data.camera = ctx.camera;
             data.viewPosition = ctx.camera.transform.position;
             data.mvpMatrix = ctx.camera.Matrix().mult(data.modelMatrix);
         }

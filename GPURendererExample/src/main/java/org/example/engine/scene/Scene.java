@@ -12,6 +12,12 @@ public class Scene {
     ArrayList<Light> lights = new ArrayList<>();
 
     Camera camera;
+    RenderMode renderMode = RenderMode.STANDARD;
+
+    public enum RenderMode {
+        STANDARD,
+        COMPUTE_EXAMPLE
+    }
 
     public Scene setCamera(Camera cam) {
         this.camera = cam;
@@ -30,6 +36,15 @@ public class Scene {
             lights.add(light);
         }
         return this;
+    }
+
+    public Scene setRenderMode(RenderMode renderMode) {
+        this.renderMode = renderMode == null ? RenderMode.STANDARD : renderMode;
+        return this;
+    }
+
+    public RenderMode getRenderMode() {
+        return renderMode;
     }
 
     public ArrayList<GameObject> getObjects() {
@@ -58,5 +73,6 @@ public class Scene {
         objects.clear();
         lights.clear();
         camera = null;
+        renderMode = RenderMode.STANDARD;
     }
 }

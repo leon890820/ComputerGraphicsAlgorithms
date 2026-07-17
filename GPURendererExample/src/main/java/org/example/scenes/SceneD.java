@@ -8,10 +8,11 @@ public class SceneD implements IScene {
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
         Camera.GH_FOV = 60.0f;
         camera.setSize(screenWidth, screenHeight, 0.1f, 1000.0f);
-        camera.transform.setPosition(0, 1, 10.0f);
+        camera.transform.setPosition(0, 0, 3.0f);
 
         Scene scene = new Scene();
         scene.setCamera(camera);
+        scene.setRenderMode(Scene.RenderMode.COMPUTE_EXAMPLE);
         return scene;
     }
 
@@ -21,6 +22,6 @@ public class SceneD implements IScene {
 
     @Override
     public float getWalkSpeed() {
-        return 0.05f;
+        return 0.0f;
     }
 }
