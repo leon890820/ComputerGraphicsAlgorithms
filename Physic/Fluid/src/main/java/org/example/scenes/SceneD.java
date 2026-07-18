@@ -6,10 +6,7 @@ import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
 public class SceneD implements IScene {
-    private static final int GRID_SIZE = 5;
-    private static final float INITIAL_SPACING = 0.35f;
-    private static final int SPHERE_RESOLUTION = 3;
-    private static final float PARTICLE_RADIUS = 0.055f;
+    private ParticleDisplay3D particleDisplay;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -20,12 +17,8 @@ public class SceneD implements IScene {
         Scene scene = new Scene();
         scene.setCamera(camera);
         scene.setRenderMode(Scene.RenderMode.PARTICLE_EXAMPLE);
-        scene.addObject(new ParticleDisplay3D(
-                GRID_SIZE,
-                INITIAL_SPACING,
-                SPHERE_RESOLUTION,
-                PARTICLE_RADIUS
-        ));
+        particleDisplay = new ParticleDisplay3D();
+        scene.addObject(particleDisplay);
         return scene;
     }
 
@@ -36,5 +29,29 @@ public class SceneD implements IScene {
     @Override
     public float getWalkSpeed() {
         return 0.03f;
+    }
+
+    public void addColliderSize(float widthDelta, float heightDelta, float depthDelta) {
+        if (particleDisplay == null) {
+            return;
+        }
+
+        particleDisplay.getSimulator().addColliderSize(widthDelta, heightDelta, depthDelta);
+    }
+
+    public void addColliderUniformSize(float delta) {
+        if (particleDisplay == null) {
+            return;
+        }
+
+        particleDisplay.getSimulator().addColliderUniformSize(delta);
+    }
+
+    public void addColliderCenter(float xDelta, float yDelta, float zDelta) {
+        if (particleDisplay == null) {
+            return;
+        }
+
+        particleDisplay.getSimulator().addColliderCenter(xDelta, yDelta, zDelta);
     }
 }

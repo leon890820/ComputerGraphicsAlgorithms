@@ -16,8 +16,12 @@ public class Main {
 
     private static final float GH_MOUSE_SENSITIVITY = 0.005f;
     private static final float MOUSE_DEAD_ZONE = 2;
+    private static final String WINDOW_TITLE = "GPU Renderer - SceneD Compute Example";
+    private static final float COLLIDER_RESIZE_SPEED = 1.5f;
+    private static final float COLLIDER_MOVE_SPEED = 1.0f;
 
     private final boolean[] key_input = new boolean[4];
+    private final boolean[] colliderInput = new boolean[10];
 
     private boolean mouseInitialized = false;
 
@@ -35,6 +39,20 @@ public class Main {
     private SceneType currentSceneType = SceneType.D;
 
     private float a = 0;
+    private double fpsTimer;
+    private double lastFrameTime;
+    private int frameCount;
+
+    private static final int COLLIDER_GROW = 0;
+    private static final int COLLIDER_SHRINK = 1;
+    private static final int COLLIDER_X_POS = 2;
+    private static final int COLLIDER_X_NEG = 3;
+    private static final int COLLIDER_Y_POS = 4;
+    private static final int COLLIDER_Y_NEG = 5;
+    private static final int COLLIDER_Z_POS = 6;
+    private static final int COLLIDER_Z_NEG = 7;
+    private static final int COLLIDER_CENTER_UP = 8;
+    private static final int COLLIDER_CENTER_DOWN = 9;
 
     private enum SceneType {
         A,
@@ -65,8 +83,10 @@ public class Main {
     }
 
     private void setup() {
-        window = new Window(WIDTH, HEIGHT, "GPU Renderer - SceneD Compute Example");
+        window = new Window(WIDTH, HEIGHT, WINDOW_TITLE);
         window.create();
+        fpsTimer = glfwGetTime();
+        lastFrameTime = fpsTimer;
 
         setupInput(window);
 
@@ -78,7 +98,12 @@ public class Main {
     }
 
     private void draw() {
+        double now = glfwGetTime();
+        float deltaTime = (float) (now - lastFrameTime);
+        lastFrameTime = now;
+
         move(window);
+        updateSceneDControls(deltaTime);
 
         currentScene.update(a);
         a += 0.02f;
@@ -90,6 +115,7 @@ public class Main {
 
         window.swapBuffers();
         window.pollEvents();
+        updateWindowTitleFps();
     }
 
     private void setupInput(Window window) {
@@ -133,6 +159,8 @@ public class Main {
             if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
                 setScene(SceneType.D);
             }
+
+            updateColliderInput(key, pressed);
         });
 
         glfwSetCursorPosCallback(handle, (w, x, y) -> {
@@ -220,5 +248,106 @@ public class Main {
         scene = currentScene.load(main_camera, WIDTH, HEIGHT);
         ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
         a = 0.0f;
+    }
+
+    private void updateColliderInput(int key, boolean pressed) {
+        if (key == GLFW_KEY_EQUAL || key == GLFW_KEY_KP_ADD) {
+            colliderInput[COLLIDER_GROW] = pressed;
+        }
+
+        if (key == GLFW_KEY_MINUS || key == GLFW_KEY_KP_SUBTRACT) {
+            colliderInput[COLLIDER_SHRINK] = pressed;
+        }
+
+        if (key == GLFW_KEY_RIGHT) {
+            colliderInput[COLLIDER_X_POS] = pressed;
+        }
+
+        if (key == GLFW_KEY_LEFT) {
+            colliderInput[COLLIDER_X_NEG] = pressed;
+        }
+
+        if (key == GLFW_KEY_UP) {
+            colliderInput[COLLIDER_Y_POS] = pressed;
+        }
+
+        if (key == GLFW_KEY_DOWN) {
+            colliderInput[COLLIDER_Y_NEG] = pressed;
+        }
+
+        if (key == GLFW_KEY_PAGE_UP) {
+            colliderInput[COLLIDER_Z_POS] = pressed;
+        }
+
+        if (key == GLFW_KEY_PAGE_DOWN) {
+            colliderInput[COLLIDER_Z_NEG] = pressed;
+        }
+
+        if (key == GLFW_KEY_HOME) {
+            colliderInput[COLLIDER_CENTER_UP] = pressed;
+        }
+
+        if (key == GLFW_KEY_END) {
+            colliderInput[COLLIDER_CENTER_DOWN] = pressed;
+        }
+    }
+
+    private void updateSceneDControls(float deltaTime) {
+        if (!(currentScene instanceof SceneD)) {
+            return;
+        }
+
+        SceneD sceneD = (SceneD) currentScene;
+        float resizeStep = COLLIDER_RESIZE_SPEED * deltaTime;
+        float moveStep = COLLIDER_MOVE_SPEED * deltaTime;
+
+        float uniformDelta =
+                (colliderInput[COLLIDER_GROW] ? resizeStep : 0.0f) +
+                (colliderInput[COLLIDER_SHRINK] ? -resizeStep : 0.0f);
+
+        float xDelta =
+                (colliderInput[COLLIDER_X_POS] ? resizeStep : 0.0f) +
+                (colliderInput[COLLIDER_X_NEG] ? -resizeStep : 0.0f);
+
+        float yDelta =
+                (colliderInput[COLLIDER_Y_POS] ? resizeStep : 0.0f) +
+                (colliderInput[COLLIDER_Y_NEG] ? -resizeStep : 0.0f);
+
+        float zDelta =
+                (colliderInput[COLLIDER_Z_POS] ? resizeStep : 0.0f) +
+                (colliderInput[COLLIDER_Z_NEG] ? -resizeStep : 0.0f);
+
+        float centerYDelta =
+                (colliderInput[COLLIDER_CENTER_UP] ? moveStep : 0.0f) +
+                (colliderInput[COLLIDER_CENTER_DOWN] ? -moveStep : 0.0f);
+
+        if (uniformDelta != 0.0f) {
+            sceneD.addColliderUniformSize(uniformDelta);
+        }
+
+        if (xDelta != 0.0f || yDelta != 0.0f || zDelta != 0.0f) {
+            sceneD.addColliderSize(xDelta, yDelta, zDelta);
+        }
+
+        if (centerYDelta != 0.0f) {
+            sceneD.addColliderCenter(0.0f, centerYDelta, 0.0f);
+        }
+    }
+
+    private void updateWindowTitleFps() {
+        frameCount++;
+
+        double now = glfwGetTime();
+        double elapsed = now - fpsTimer;
+
+        if (elapsed < 1.0) {
+            return;
+        }
+
+        int fps = (int) Math.round(frameCount / elapsed);
+        window.setTitle(WINDOW_TITLE + " | FPS: " + fps);
+
+        frameCount = 0;
+        fpsTimer = now;
     }
 }

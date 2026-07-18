@@ -65,6 +65,20 @@ public class ComputeBuffer {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
+    public void setData(float[] data) {
+        FloatBuffer nativeData = MemoryUtil.memAllocFloat(data.length);
+        nativeData.put(data).flip();
+        setData(nativeData);
+        MemoryUtil.memFree(nativeData);
+    }
+
+    public void setData(int[] data) {
+        IntBuffer nativeData = MemoryUtil.memAllocInt(data.length);
+        nativeData.put(data).flip();
+        setData(nativeData);
+        MemoryUtil.memFree(nativeData);
+    }
+
     public void setData(FloatBuffer data) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data);
@@ -75,6 +89,21 @@ public class ComputeBuffer {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    public int[] getIntData() {
+        int elementCount = count * stride / Integer.BYTES;
+        IntBuffer data = MemoryUtil.memAllocInt(elementCount);
+        int[] result = new int[elementCount];
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        data.rewind();
+        data.get(result);
+        MemoryUtil.memFree(data);
+        return result;
     }
 
     public void bindBase(int binding) {

@@ -50,6 +50,7 @@ public class Window {
     public boolean shouldClose() { return glfwWindowShouldClose(handle); }
     public void swapBuffers() { glfwSwapBuffers(handle); }
     public void pollEvents() { glfwPollEvents(); }
+    public void setTitle(String title) { glfwSetWindowTitle(handle, title); }
 
     public void destroy() {
         glfwDestroyWindow(handle);

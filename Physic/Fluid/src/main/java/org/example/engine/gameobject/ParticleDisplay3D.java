@@ -1,102 +1,86 @@
 package org.example.engine.gameobject;
 
 import org.example.engine.component.MeshRenderer;
+import org.example.engine.component.ParticleBuffer;
+import org.example.engine.component.ParticleSimulator;
+import org.example.engine.component.ParticleSpawn;
 import org.example.engine.gl.ComputeBuffer;
 import org.example.engine.material.Particle3DMaterial;
 import org.example.engine.mesh.Mesh;
 import org.example.engine.mesh.SphereGenerator;
 import org.example.engine.render.RenderContext;
 import org.example.engine.resource.ResourceDisposalContext;
-import org.lwjgl.system.MemoryUtil;
-
-import java.nio.FloatBuffer;
 
 public class ParticleDisplay3D extends GameObject {
-    private static final int FLOATS_PER_PARTICLE = 4;
-    private static final int PARTICLE_STRIDE = FLOATS_PER_PARTICLE * Float.BYTES;
-
-    private final int particleCount;
-    private final ComputeBuffer positionBuffer;
-    private final ComputeBuffer velocityBuffer;
+    private final ParticleBuffer particleBuffer;
+    private final ParticleSimulator simulator;
     private final Particle3DMaterial material;
 
-    public ParticleDisplay3D(int gridSize, float spacing, int meshResolution, float particleScale) {
-        particleCount = gridSize * gridSize * gridSize;
-        positionBuffer = new ComputeBuffer(particleCount, PARTICLE_STRIDE);
-        velocityBuffer = new ComputeBuffer(particleCount, PARTICLE_STRIDE);
+    public ParticleDisplay3D() {
+        this(new ParticleSpawn());
+    }
 
-        uploadInitialGrid(gridSize, spacing);
-        uploadZeroVelocities();
+    public ParticleDisplay3D(ParticleSpawn spawnComponent) {
+        ParticleSpawn spawn = spawnComponent == null
+                ? new ParticleSpawn()
+                : spawnComponent;
 
-        material = new Particle3DMaterial(positionBuffer, velocityBuffer)
-                .setScale(particleScale)
+        particleBuffer = new ParticleBuffer(spawn);
+        simulator = new ParticleSimulator();
+
+        material = new Particle3DMaterial(
+                particleBuffer.getPositionBuffer(),
+                particleBuffer.getVelocityBuffer()
+        )
+                .setScale(spawn.getParticleRadius())
                 .setVelocityMax(1.0f);
 
-        Mesh mesh = SphereGenerator.generateSphereMesh(meshResolution);
+        Mesh mesh = SphereGenerator.generateSphereMesh(spawn.getMeshResolution());
         setMesh(mesh);
         buildSubMeshRenderers(material);
     }
 
     public ComputeBuffer getPositionBuffer() {
-        return positionBuffer;
+        return particleBuffer.getPositionBuffer();
     }
 
     public ComputeBuffer getVelocityBuffer() {
-        return velocityBuffer;
+        return particleBuffer.getVelocityBuffer();
     }
 
     public int getParticleCount() {
-        return particleCount;
+        return particleBuffer.getParticleCount();
+    }
+
+    public ParticleBuffer getParticleBuffer() {
+        return particleBuffer;
+    }
+
+    public ParticleSimulator getSimulator() {
+        return simulator;
     }
 
     @Override
     public void run(RenderContext ctx) {
+        simulator.update(particleBuffer);
+
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
-                mr.renderInstanced(createMaterialRenderData(ctx, mr), material, particleCount);
+                mr.renderInstanced(
+                        createMaterialRenderData(ctx, mr),
+                        material,
+                        particleBuffer.getParticleCount()
+                );
             }
         }
+
+        simulator.getCollider().debugDraw(ctx);
     }
 
     @Override
     public void dispose(ResourceDisposalContext disposalContext) {
         super.dispose(disposalContext);
-        positionBuffer.dispose();
-        velocityBuffer.dispose();
-    }
-
-    private void uploadInitialGrid(int gridSize, float spacing) {
-        FloatBuffer data = MemoryUtil.memAllocFloat(particleCount * FLOATS_PER_PARTICLE);
-        float centerOffset = (gridSize - 1) * 0.5f;
-
-        for (int z = 0; z < gridSize; z++) {
-            for (int y = 0; y < gridSize; y++) {
-                for (int x = 0; x < gridSize; x++) {
-                    data.put((x - centerOffset) * spacing);
-                    data.put((y - centerOffset) * spacing);
-                    data.put((z - centerOffset) * spacing);
-                    data.put(1.0f);
-                }
-            }
-        }
-
-        data.flip();
-        positionBuffer.setData(data);
-        MemoryUtil.memFree(data);
-    }
-
-    private void uploadZeroVelocities() {
-        FloatBuffer data = MemoryUtil.memAllocFloat(particleCount * FLOATS_PER_PARTICLE);
-
-        for (int i = 0; i < particleCount; i++) {
-            data.put(0.0f);
-            data.put(0.0f);
-            data.put(0.0f);
-            data.put(0.0f);
-        }
-
-        data.flip();
-        velocityBuffer.setData(data);
-        MemoryUtil.memFree(data);
+        simulator.dispose();
+        particleBuffer.dispose();
     }
 }

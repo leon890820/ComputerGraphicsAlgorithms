@@ -1,0 +1,141 @@
+#version 430
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+struct Entry {
+    uint originalIndex;
+    uint hash;
+    uint key;
+    uint padding;
+};
+
+layout(std430, binding = 0) readonly buffer PredictedPositions {
+    vec4 PredictedPositionsData[];
+};
+
+layout(std430, binding = 1) readonly buffer Densities {
+    vec4 DensitiesData[];
+};
+
+layout(std430, binding = 2) readonly buffer SpatialIndices {
+    Entry SpatialIndicesData[];
+};
+
+layout(std430, binding = 3) readonly buffer SpatialOffsets {
+    uint SpatialOffsetsData[];
+};
+
+layout(std430, binding = 4) buffer Velocities {
+    vec4 VelocitiesData[];
+};
+
+uniform int numParticles;
+uniform float deltaTime;
+uniform float smoothingRadius;
+uniform float targetDensity;
+uniform float pressureMultiplier;
+uniform float nearPressureMultiplier;
+
+const ivec3 offsets3D[27] = ivec3[27](
+    ivec3(-1, -1, -1), ivec3(0, -1, -1), ivec3(1, -1, -1),
+    ivec3(-1,  0, -1), ivec3(0,  0, -1), ivec3(1,  0, -1),
+    ivec3(-1,  1, -1), ivec3(0,  1, -1), ivec3(1,  1, -1),
+    ivec3(-1, -1,  0), ivec3(0, -1,  0), ivec3(1, -1,  0),
+    ivec3(-1,  0,  0), ivec3(0,  0,  0), ivec3(1,  0,  0),
+    ivec3(-1,  1,  0), ivec3(0,  1,  0), ivec3(1,  1,  0),
+    ivec3(-1, -1,  1), ivec3(0, -1,  1), ivec3(1, -1,  1),
+    ivec3(-1,  0,  1), ivec3(0,  0,  1), ivec3(1,  0,  1),
+    ivec3(-1,  1,  1), ivec3(0,  1,  1), ivec3(1,  1,  1)
+);
+
+ivec3 getCell3D(vec3 position, float radius) {
+    return ivec3(floor(position / radius));
+}
+
+uint hashCell3D(ivec3 cell) {
+    uint x = uint(cell.x) * 15823u;
+    uint y = uint(cell.y) * 9737333u;
+    uint z = uint(cell.z) * 440817757u;
+    return x ^ y ^ z;
+}
+
+uint keyFromHash(uint hashValue, uint tableSize) {
+    return hashValue % tableSize;
+}
+
+float pressureFromDensity(float density) {
+    return (density - targetDensity) * pressureMultiplier;
+}
+
+float nearPressureFromDensity(float nearDensity) {
+    return nearDensity * nearPressureMultiplier;
+}
+
+float densityDerivative(float distance, float radius) {
+    float q = max(0.0, 1.0 - distance / radius);
+    return -3.0 * q * q / radius;
+}
+
+float nearDensityDerivative(float distance, float radius) {
+    float q = max(0.0, 1.0 - distance / radius);
+    return -4.0 * q * q * q / radius;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    if (id >= uint(numParticles)) {
+        return;
+    }
+
+    float density = max(DensitiesData[id].x, 0.0001);
+    float nearDensity = DensitiesData[id].y;
+    float pressure = pressureFromDensity(density);
+    float nearPressure = nearPressureFromDensity(nearDensity);
+    vec3 pressureForce = vec3(0.0);
+
+    vec3 position = PredictedPositionsData[id].xyz;
+    ivec3 originCell = getCell3D(position, smoothingRadius);
+    float sqrRadius = smoothingRadius * smoothingRadius;
+
+    for (int i = 0; i < 27; i++) {
+        uint hashValue = hashCell3D(originCell + offsets3D[i]);
+        uint key = keyFromHash(hashValue, uint(numParticles));
+        uint currentIndex = SpatialOffsetsData[key];
+
+        while (currentIndex < uint(numParticles)) {
+            Entry indexData = SpatialIndicesData[currentIndex];
+            currentIndex++;
+
+            if (indexData.key != key) {
+                break;
+            }
+
+            if (indexData.hash != hashValue || indexData.originalIndex == id) {
+                continue;
+            }
+
+            vec3 neighbourPosition = PredictedPositionsData[indexData.originalIndex].xyz;
+            vec3 offsetToNeighbour = neighbourPosition - position;
+            float sqrDistance = dot(offsetToNeighbour, offsetToNeighbour);
+
+            if (sqrDistance > sqrRadius) {
+                continue;
+            }
+
+            float neighbourDensity = max(DensitiesData[indexData.originalIndex].x, 0.0001);
+            float neighbourNearDensity = DensitiesData[indexData.originalIndex].y;
+            float sharedPressure = (pressure + pressureFromDensity(neighbourDensity)) * 0.5;
+            float sharedNearPressure = (nearPressure + nearPressureFromDensity(neighbourNearDensity)) * 0.5;
+            float distance = sqrt(sqrDistance);
+            vec3 direction = distance > 0.0001 ? offsetToNeighbour / distance : vec3(0.0, 1.0, 0.0);
+
+            pressureForce += direction * densityDerivative(distance, smoothingRadius) * sharedPressure / neighbourDensity;
+            pressureForce += direction * nearDensityDerivative(distance, smoothingRadius) * sharedNearPressure / neighbourDensity;
+        }
+    }
+
+    vec3 velocity = VelocitiesData[id].xyz;
+    velocity += pressureForce / density * deltaTime;
+    VelocitiesData[id] = vec4(velocity, 0.0);
+}

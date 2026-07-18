@@ -1,0 +1,62 @@
+#version 430
+
+layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer Positions {
+    vec4 PositionsData[];
+};
+
+layout(std430, binding = 1) buffer Velocities {
+    vec4 VelocitiesData[];
+};
+
+struct ColliderData {
+    mat4 localToWorld;
+    mat4 worldToLocal;
+};
+
+layout(std430, binding = 2) readonly buffer CollidersBuffer {
+    ColliderData Colliders[];
+};
+
+uniform int numParticles;
+uniform float deltaTime;
+uniform float bounceDamping;
+
+void resolveCollisions(inout vec3 position, inout vec3 velocity) {
+    vec3 positionLocal = (Colliders[0].worldToLocal * vec4(position, 1.0)).xyz;
+    vec3 velocityLocal = (Colliders[0].worldToLocal * vec4(velocity, 0.0)).xyz;
+    vec3 halfSize = vec3(0.5);
+
+    for (int axis = 0; axis < 3; axis++) {
+        if (positionLocal[axis] < -halfSize[axis]) {
+            positionLocal[axis] = -halfSize[axis];
+            velocityLocal[axis] = abs(velocityLocal[axis]) * bounceDamping;
+        }
+
+        if (positionLocal[axis] > halfSize[axis]) {
+            positionLocal[axis] = halfSize[axis];
+            velocityLocal[axis] = -abs(velocityLocal[axis]) * bounceDamping;
+        }
+    }
+
+    position = (Colliders[0].localToWorld * vec4(positionLocal, 1.0)).xyz;
+    velocity = (Colliders[0].localToWorld * vec4(velocityLocal, 0.0)).xyz;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    if (id >= uint(numParticles)) {
+        return;
+    }
+
+    vec3 position = PositionsData[id].xyz;
+    vec3 velocity = VelocitiesData[id].xyz;
+
+    position += velocity * deltaTime;
+    resolveCollisions(position, velocity);
+
+    PositionsData[id] = vec4(position, 1.0);
+    VelocitiesData[id] = vec4(velocity, 0.0);
+}
