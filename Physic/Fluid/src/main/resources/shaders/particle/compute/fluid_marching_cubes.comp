@@ -1,0 +1,170 @@
+#version 430
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+struct Triangle {
+    vec4 pointA;
+    vec4 pointB;
+    vec4 pointC;
+};
+
+layout(std430, binding = 0) buffer Triangles {
+    Triangle TriangleData[];
+};
+
+layout(std430, binding = 1) buffer TriangleCounter {
+    uint TriangleCount;
+};
+
+uniform sampler3D densityTexture;
+uniform ivec3 numVoxelPerAxis;
+uniform float isoLevel;
+uniform vec3 minPos;
+uniform vec3 size;
+uniform int maxTriangles;
+
+const int tetrahedra[24] = int[24](
+    0, 5, 1, 6,
+    0, 1, 2, 6,
+    0, 2, 3, 6,
+    0, 3, 7, 6,
+    0, 7, 4, 6,
+    0, 4, 5, 6
+);
+
+vec3 cubeCornerOffset(int index) {
+    if (index == 0) return vec3(0.0, 0.0, 0.0);
+    if (index == 1) return vec3(1.0, 0.0, 0.0);
+    if (index == 2) return vec3(1.0, 0.0, 1.0);
+    if (index == 3) return vec3(0.0, 0.0, 1.0);
+    if (index == 4) return vec3(0.0, 1.0, 0.0);
+    if (index == 5) return vec3(1.0, 1.0, 0.0);
+    if (index == 6) return vec3(1.0, 1.0, 1.0);
+    return vec3(0.0, 1.0, 1.0);
+}
+
+bool outOfBoundary(uvec3 pos) {
+    return pos.x >= uint(numVoxelPerAxis.x)
+        || pos.y >= uint(numVoxelPerAxis.y)
+        || pos.z >= uint(numVoxelPerAxis.z);
+}
+
+vec3 getPosition(vec3 coord) {
+    return minPos + coord * size;
+}
+
+float sampleDensity(vec3 coord) {
+    bool isEdge = any(lessThanEqual(coord, vec3(0.0)))
+        || coord.x >= float(numVoxelPerAxis.x)
+        || coord.y >= float(numVoxelPerAxis.y)
+        || coord.z >= float(numVoxelPerAxis.z);
+
+    if (isEdge) {
+        return isoLevel;
+    }
+
+    vec3 uvw = coord / vec3(numVoxelPerAxis);
+    return textureLod(densityTexture, clamp(uvw, 0.0, 1.0), 0.0).x;
+}
+
+vec3 interpolateVerts(vec3 p1, float d1, vec3 p2, float d2) {
+    float denom = d2 - d1;
+    float t = abs(denom) < 0.00001 ? 0.5 : (isoLevel - d1) / denom;
+    return mix(p1, p2, clamp(t, 0.0, 1.0));
+}
+
+void appendTriangle(vec3 a, vec3 b, vec3 c) {
+    uint index = atomicAdd(TriangleCount, 1u);
+
+    if (index >= uint(maxTriangles)) {
+        return;
+    }
+
+    TriangleData[index].pointA = vec4(a, 1.0);
+    TriangleData[index].pointB = vec4(b, 1.0);
+    TriangleData[index].pointC = vec4(c, 1.0);
+}
+
+void emitTetra(vec3 p0, float d0, vec3 p1, float d1, vec3 p2, float d2, vec3 p3, float d3) {
+    vec3 p[4] = vec3[4](p0, p1, p2, p3);
+    float d[4] = float[4](d0, d1, d2, d3);
+    int inside[4];
+    int outside[4];
+    int insideCount = 0;
+    int outsideCount = 0;
+
+    for (int i = 0; i < 4; i++) {
+        if (d[i] > isoLevel) {
+            inside[insideCount++] = i;
+        } else {
+            outside[outsideCount++] = i;
+        }
+    }
+
+    if (insideCount == 0 || insideCount == 4) {
+        return;
+    }
+
+    if (insideCount == 1) {
+        int a = inside[0];
+        int b = outside[0];
+        int c = outside[1];
+        int e = outside[2];
+        appendTriangle(
+            interpolateVerts(p[a], d[a], p[b], d[b]),
+            interpolateVerts(p[a], d[a], p[c], d[c]),
+            interpolateVerts(p[a], d[a], p[e], d[e])
+        );
+        return;
+    }
+
+    if (insideCount == 3) {
+        int a = outside[0];
+        int b = inside[0];
+        int c = inside[1];
+        int e = inside[2];
+        appendTriangle(
+            interpolateVerts(p[a], d[a], p[e], d[e]),
+            interpolateVerts(p[a], d[a], p[c], d[c]),
+            interpolateVerts(p[a], d[a], p[b], d[b])
+        );
+        return;
+    }
+
+    int a = inside[0];
+    int b = inside[1];
+    int c = outside[0];
+    int e = outside[1];
+    vec3 ac = interpolateVerts(p[a], d[a], p[c], d[c]);
+    vec3 ae = interpolateVerts(p[a], d[a], p[e], d[e]);
+    vec3 bc = interpolateVerts(p[b], d[b], p[c], d[c]);
+    vec3 be = interpolateVerts(p[b], d[b], p[e], d[e]);
+    appendTriangle(ac, bc, ae);
+    appendTriangle(ae, bc, be);
+}
+
+void main() {
+    uvec3 id = gl_GlobalInvocationID.xyz;
+
+    if (outOfBoundary(id)) {
+        return;
+    }
+
+    vec3 positions[8];
+    float densities[8];
+
+    for (int i = 0; i < 8; i++) {
+        vec3 coord = vec3(id) + cubeCornerOffset(i);
+        positions[i] = getPosition(coord);
+        densities[i] = sampleDensity(coord);
+    }
+
+    for (int i = 0; i < 6; i++) {
+        int base = i * 4;
+        int a = tetrahedra[base + 0];
+        int b = tetrahedra[base + 1];
+        int c = tetrahedra[base + 2];
+        int d = tetrahedra[base + 3];
+        emitTetra(positions[a], densities[a], positions[b], densities[b], positions[c], densities[c], positions[d], densities[d]);
+    }
+}

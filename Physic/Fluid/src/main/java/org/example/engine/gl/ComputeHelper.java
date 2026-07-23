@@ -7,10 +7,11 @@ import static org.lwjgl.opengl.GL15.GL_READ_ONLY;
 import static org.lwjgl.opengl.GL15.GL_READ_WRITE;
 import static org.lwjgl.opengl.GL15.GL_WRITE_ONLY;
 import static org.lwjgl.opengl.GL30.GL_RGBA32F;
+import static org.lwjgl.opengl.GL42.GL_COMMAND_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
-import static org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.GL_TEXTURE_FETCH_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
+import static org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT;
 
 public final class ComputeHelper {
     public static final int DEFAULT_FILTER = GL_LINEAR;
@@ -123,7 +124,12 @@ public final class ComputeHelper {
     }
 
     public static void memoryBarrier() {
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+        glMemoryBarrier(
+                GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+                        | GL_SHADER_STORAGE_BARRIER_BIT
+                        | GL_TEXTURE_FETCH_BARRIER_BIT
+                        | GL_COMMAND_BARRIER_BIT
+        );
     }
 
     public static void release(Texture... textures) {

@@ -18,6 +18,7 @@ uniform float uScale;
 uniform float uVelocityMax;
 
 out vec3 vNormal;
+out vec3 vWorldPos;
 out float vSpeedT;
 
 void main() {
@@ -30,5 +31,6 @@ void main() {
     gl_Position = uMVP * vec4(localPos, 1.0);
 
     vNormal = normalize((uLocalToWorld * vec4(aNormal, 0.0)).xyz);
+    vWorldPos = localPos;
     vSpeedT = clamp(length(velocity) / max(uVelocityMax, 0.0001), 0.0, 1.0);
 }

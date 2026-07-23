@@ -6,7 +6,7 @@ public class DebugLineMaterial extends Material {
     private Vector3 colour = new Vector3(0.25f, 1.0f, 0.45f);
 
     public DebugLineMaterial() {
-        super("/shaders/debug_line.frag", "/shaders/debug_line.vert");
+        super("/shaders/debug/debug_line.frag", "/shaders/debug/debug_line.vert");
     }
 
     public DebugLineMaterial setColour(float r, float g, float b) {

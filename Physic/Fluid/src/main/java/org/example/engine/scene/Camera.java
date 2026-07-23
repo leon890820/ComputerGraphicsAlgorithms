@@ -219,5 +219,9 @@ public class Camera extends Quad {
     public float getFar() {
         return far;
     }
+
+    public float getNear() {
+        return near;
+    }
 }
 

@@ -1,0 +1,115 @@
+#version 430
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+struct Entry {
+    uint originalIndex;
+    uint hash;
+    uint key;
+    uint padding;
+};
+
+layout(rgba32f, binding = 0) uniform writeonly image3D DensityVolume;
+
+layout(std430, binding = 0) readonly buffer PredictedPositions {
+    vec4 PredictedPositionsData[];
+};
+
+layout(std430, binding = 1) readonly buffer SpatialIndices {
+    Entry SpatialIndicesData[];
+};
+
+layout(std430, binding = 2) readonly buffer SpatialOffsets {
+    uint SpatialOffsetsData[];
+};
+
+uniform int numParticles;
+uniform float smoothingRadius;
+uniform vec3 boundsCenter;
+uniform vec3 boundsSize;
+
+const ivec3 offsets3D[27] = ivec3[27](
+    ivec3(-1, -1, -1), ivec3(0, -1, -1), ivec3(1, -1, -1),
+    ivec3(-1,  0, -1), ivec3(0,  0, -1), ivec3(1,  0, -1),
+    ivec3(-1,  1, -1), ivec3(0,  1, -1), ivec3(1,  1, -1),
+    ivec3(-1, -1,  0), ivec3(0, -1,  0), ivec3(1, -1,  0),
+    ivec3(-1,  0,  0), ivec3(0,  0,  0), ivec3(1,  0,  0),
+    ivec3(-1,  1,  0), ivec3(0,  1,  0), ivec3(1,  1,  0),
+    ivec3(-1, -1,  1), ivec3(0, -1,  1), ivec3(1, -1,  1),
+    ivec3(-1,  0,  1), ivec3(0,  0,  1), ivec3(1,  0,  1),
+    ivec3(-1,  1,  1), ivec3(0,  1,  1), ivec3(1,  1,  1)
+);
+
+ivec3 getCell3D(vec3 position, float radius) {
+    return ivec3(floor(position / radius));
+}
+
+uint hashCell3D(ivec3 cell) {
+    uint x = uint(cell.x) * 15823u;
+    uint y = uint(cell.y) * 9737333u;
+    uint z = uint(cell.z) * 440817757u;
+    return x ^ y ^ z;
+}
+
+uint keyFromHash(uint hashValue, uint tableSize) {
+    return hashValue % tableSize;
+}
+
+float densityKernel(float distance, float radius) {
+    float q = max(0.0, 1.0 - distance / radius);
+    return q * q * q;
+}
+
+float nearDensityKernel(float distance, float radius) {
+    float q = max(0.0, 1.0 - distance / radius);
+    return q * q * q * q;
+}
+
+void main() {
+    ivec3 voxel = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 volumeSize = imageSize(DensityVolume);
+
+    if (any(greaterThanEqual(voxel, volumeSize))) {
+        return;
+    }
+
+    vec3 uvw = (vec3(voxel) + 0.5) / vec3(volumeSize);
+    vec3 worldPosition = boundsCenter + (uvw - 0.5) * boundsSize;
+    ivec3 originCell = getCell3D(worldPosition, smoothingRadius);
+    float sqrRadius = smoothingRadius * smoothingRadius;
+    float density = 0.0;
+    float nearDensity = 0.0;
+
+    for (int i = 0; i < 27; i++) {
+        uint hashValue = hashCell3D(originCell + offsets3D[i]);
+        uint key = keyFromHash(hashValue, uint(numParticles));
+        uint currentIndex = SpatialOffsetsData[key];
+
+        while (currentIndex < uint(numParticles)) {
+            Entry indexData = SpatialIndicesData[currentIndex];
+            currentIndex++;
+
+            if (indexData.key != key) {
+                break;
+            }
+
+            if (indexData.hash != hashValue) {
+                continue;
+            }
+
+            vec3 neighbourPosition = PredictedPositionsData[indexData.originalIndex].xyz;
+            vec3 offsetToNeighbour = neighbourPosition - worldPosition;
+            float sqrDistance = dot(offsetToNeighbour, offsetToNeighbour);
+
+            if (sqrDistance > sqrRadius) {
+                continue;
+            }
+
+            float distance = sqrt(sqrDistance);
+            density += densityKernel(distance, smoothingRadius);
+            nearDensity += nearDensityKernel(distance, smoothingRadius);
+        }
+    }
+
+    imageStore(DensityVolume, voxel, vec4(density, nearDensity, 0.0, 1.0));
+}

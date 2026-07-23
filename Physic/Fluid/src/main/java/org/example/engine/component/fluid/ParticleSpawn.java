@@ -3,7 +3,7 @@ package org.example.engine.component;
 import java.nio.FloatBuffer;
 
 public class ParticleSpawn {
-    private static final int DEFAULT_GRID_SIZE = 25;
+    private static final int DEFAULT_GRID_SIZE = 13;
     private static final float DEFAULT_SPAWN_SPACING = 0.04f;
     private static final int DEFAULT_MESH_RESOLUTION = 3;
     private static final float DEFAULT_PARTICLE_RADIUS = 0.01f;
@@ -15,6 +15,18 @@ public class ParticleSpawn {
 
     public int getParticleCount() {
         return gridSize * gridSize * gridSize;
+    }
+
+    public int getGridSize() {
+        return gridSize;
+    }
+
+    public float getSpawnSpacing() {
+        return spawnSpacing;
+    }
+
+    public float getSpawnSpan() {
+        return Math.max(0.0f, (gridSize - 1) * spawnSpacing);
     }
 
     public int getMeshResolution() {

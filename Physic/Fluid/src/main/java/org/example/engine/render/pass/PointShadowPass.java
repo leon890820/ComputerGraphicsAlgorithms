@@ -1,6 +1,6 @@
 package org.example.engine.render.pass;
 
-import org.example.engine.gameobject.GameObject;
+import org.example.engine.component.MeshRenderer;
 import org.example.engine.gl.CubeMapFBO;
 import org.example.engine.gl.TextureCube;
 import org.example.engine.light.Light;
@@ -15,7 +15,7 @@ public class PointShadowPass extends RenderPass {
     PointShadowMaterial shadowMaterial;
     public PointShadowPass(int size){
         ShadowBuffer = new CubeMapFBO(size, 1, true);
-        shadowMaterial = new PointShadowMaterial("/shaders/Shadow.frag", "/shaders/Shadow.vert");
+        shadowMaterial = new PointShadowMaterial("/shaders/core/Shadow.frag", "/shaders/core/Shadow.vert");
     }
 
     public void render(RenderContext ctx, PointLight light) {
@@ -28,8 +28,12 @@ public class PointShadowPass extends RenderPass {
                 ShadowBuffer.bindFace(face);
                 glClear(GL_DEPTH_BUFFER_BIT);
                 shadowMaterial.setShadowMatrix(shadowMatrices[face]);
-                for(GameObject go : ctx.scene.getObjects()){
-                    go.runWithMaterial(ctx, shadowMaterial);
+                for(MeshRenderer renderer : ctx.scene.getComponents(MeshRenderer.class)){
+                    if (renderer == null || !renderer.isEnabled()) {
+                        continue;
+                    }
+
+                    renderer.render(ctx, shadowMaterial);
                 }
             }
         } finally {

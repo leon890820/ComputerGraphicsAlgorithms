@@ -19,6 +19,9 @@ uniform float deltaTime;
 uniform vec3 gravity;
 uniform vec3 center;
 uniform float concentration;
+uniform float containmentRadius;
+uniform float containmentStrength;
+uniform float maxSpeed;
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
@@ -39,6 +42,18 @@ void main() {
 
     if (length(toCenter) > 0.0001) {
         velocity += concentration * deltaTime * distanceScale * normalize(toCenter);
+    }
+
+    float centerDistance = length(toCenter);
+    if (centerDistance > containmentRadius && centerDistance > 0.0001) {
+        float overflow = centerDistance - containmentRadius;
+        vec3 centerDir = toCenter / centerDistance;
+        velocity += centerDir * overflow * containmentStrength * deltaTime;
+    }
+
+    float speed = length(velocity);
+    if (speed > maxSpeed) {
+        velocity = velocity / speed * maxSpeed;
     }
 
     VelocitiesData[id] = vec4(velocity, 0.0);

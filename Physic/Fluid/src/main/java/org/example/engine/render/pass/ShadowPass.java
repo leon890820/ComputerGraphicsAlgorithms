@@ -2,7 +2,7 @@ package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
-import org.example.engine.gameobject.GameObject;
+import org.example.engine.component.MeshRenderer;
 import org.example.engine.light.Light;
 import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;
@@ -14,7 +14,7 @@ public class ShadowPass extends RenderPass {
     ShadowMaterial shadowMaterial;
     public ShadowPass(int size){
         ShadowBuffer = new FBO(size, size, 1, GL_LINEAR, true);
-        shadowMaterial = new ShadowMaterial("/shaders/Shadow.frag", "/shaders/Shadow.vert");
+        shadowMaterial = new ShadowMaterial("/shaders/core/Shadow.frag", "/shaders/core/Shadow.vert");
     }
 
     public void render(RenderContext ctx, Light light) {
@@ -24,8 +24,12 @@ public class ShadowPass extends RenderPass {
         Light previousLight = ctx.activeLight;
         ctx.activeLight = light;
         try {
-            for(GameObject go : ctx.scene.getObjects()){
-                go.runWithMaterial(ctx, shadowMaterial);
+            for(MeshRenderer renderer : ctx.scene.getComponents(MeshRenderer.class)){
+                if (renderer == null || !renderer.isEnabled()) {
+                    continue;
+                }
+
+                renderer.render(ctx, shadowMaterial);
             }
         } finally {
             ctx.activeLight = previousLight;

@@ -5,7 +5,8 @@ import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.light.SpotLight;
 import org.example.engine.render.pass.*;
-import org.example.engine.scene.Scene;
+
+import static org.lwjgl.opengl.GL33.*;
 
 public class Renderer {
     private static final int SHADOW_SIZE = 1024;
@@ -16,38 +17,51 @@ public class Renderer {
     private final ScenePass spotScenePass;
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
-    private final ComputeExamplePass computeExamplePass;
-    private final ParticleExamplePass particleExamplePass;
+    private final SceneColorPass sceneColorPass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
         shadowPass = new ShadowPass(SHADOW_SIZE);
         pointShadowPass = new PointShadowPass(SHADOW_SIZE);
         gBufferPass = new GBufferPass(screenWidth, screenHeight);
-        spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
-        directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
+        spotScenePass = new ScenePass("/shaders/lights/spotLight.frag", "/shaders/core/quad.vert");
+        directionalScenePass = new ScenePass("/shaders/lights/directionalLight.frag", "/shaders/core/quad.vert");
         pointScenePass = new PointScenePass();
-        computeExamplePass = new ComputeExamplePass(screenWidth, screenHeight);
-        particleExamplePass = new ParticleExamplePass();
+        sceneColorPass = new SceneColorPass(screenWidth, screenHeight);
     }
 
     public void render(RenderContext ctx) {
-        if (ctx.scene.getRenderMode() == Scene.RenderMode.COMPUTE_EXAMPLE) {
-            computeExamplePass.render(ctx);
+        if (ctx == null || ctx.scene == null) {
             return;
         }
 
-        if (ctx.scene.getRenderMode() == Scene.RenderMode.PARTICLE_EXAMPLE) {
-            particleExamplePass.render(ctx);
+        if (ctx.scene.getLights().isEmpty()) {
+            sceneColorPass.render(ctx);
+            sceneColorPass.drawToScreen(ctx);
+            ctx.scene.renderCustom(ctx);
             return;
         }
 
         gBufferPass.render(ctx);
         GBuffer gBuffer = gBufferPass.getGBuffer();
 
+        clearDefaultSurface(ctx);
         for (Light light : ctx.scene.getLights()) {
             renderLight(ctx, gBuffer, light);
         }
+
+        ctx.sceneColorTexture = gBuffer.albedo;
+        ctx.sceneDepthTexture = gBuffer.depth;
+        ctx.scene.renderCustom(ctx);
+    }
+
+    private void clearDefaultSurface(RenderContext ctx) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, ctx.screenWidth, ctx.screenHeight);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+        glClearColor(0.015f, 0.018f, 0.025f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     private void renderLight(RenderContext ctx, GBuffer gBuffer, Light light) {

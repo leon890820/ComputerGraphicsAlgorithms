@@ -8,6 +8,7 @@ import org.example.engine.mesh.Mesh;
 import org.example.engine.mesh.SubMesh;
 import org.example.engine.render.RenderContext;
 import org.example.engine.resource.ResourceDisposalContext;
+import org.example.engine.scene.Camera;
 import org.example.engine.scene.Transform;
 
 public class ParticleCollider {
@@ -16,16 +17,18 @@ public class ParticleCollider {
     private final Transform transform = new Transform();
     private final GameObject debugBox;
     private final DebugLineMaterial debugMaterial;
+    private final ColliderGizmo gizmo;
     private boolean debugDrawEnabled = true;
 
     public ParticleCollider() {
-        transform.setScale(new Vector3(2.0f, 2.0f, 2.0f));
+        transform.setScale(new Vector3(3.0f, 2.0f, 3.0f));
         debugMaterial = new DebugLineMaterial();
         debugBox = new GameObject() {
         };
         debugBox.setMesh(createDebugBoxMesh());
         debugBox.setTransform(transform);
         debugBox.buildSubMeshRenderers(debugMaterial);
+        gizmo = new ColliderGizmo();
     }
 
     public Transform getTransform() {
@@ -91,6 +94,9 @@ public class ParticleCollider {
 
     public ParticleCollider setDebugDrawEnabled(boolean debugDrawEnabled) {
         this.debugDrawEnabled = debugDrawEnabled;
+        if (!debugDrawEnabled) {
+            gizmo.resetInteraction();
+        }
         return this;
     }
 
@@ -99,18 +105,85 @@ public class ParticleCollider {
         return this;
     }
 
+    public ColliderGizmo.Mode toggleGizmoMode() {
+        return gizmo.toggleMode();
+    }
+
+    public ColliderGizmo.Mode getGizmoMode() {
+        return gizmo.getMode();
+    }
+
     public void debugDraw(RenderContext ctx) {
         if (!debugDrawEnabled || ctx == null) {
             return;
         }
 
-        debugBox.debugRun(ctx);
+        for (MeshRenderer renderer : debugBox.getMeshRenderers()) {
+            renderer.debugRender(ctx);
+        }
+    }
+
+    public void updateGizmo(
+            Transform moveTarget,
+            Camera camera,
+            int screenWidth,
+            int screenHeight,
+            double mouseX,
+            double mouseY,
+            boolean leftMouseDown,
+            boolean leftMousePressed,
+            boolean leftMouseReleased
+    ) {
+        gizmo.update(
+                this,
+                moveTarget,
+                camera,
+                screenWidth,
+                screenHeight,
+                mouseX,
+                mouseY,
+                leftMouseDown,
+                leftMousePressed,
+                leftMouseReleased
+        );
+    }
+
+    public void updateGizmo(
+            Camera camera,
+            int screenWidth,
+            int screenHeight,
+            double mouseX,
+            double mouseY,
+            boolean leftMouseDown,
+            boolean leftMousePressed,
+            boolean leftMouseReleased
+    ) {
+        updateGizmo(
+                null,
+                camera,
+                screenWidth,
+                screenHeight,
+                mouseX,
+                mouseY,
+                leftMouseDown,
+                leftMousePressed,
+                leftMouseReleased
+        );
+    }
+
+    public void drawGizmo(Transform moveTarget, RenderContext ctx) {
+        if (!debugDrawEnabled) {
+            return;
+        }
+
+        gizmo.draw(this, moveTarget, ctx);
     }
 
     public void dispose() {
         ResourceDisposalContext disposalContext = new ResourceDisposalContext();
         debugBox.dispose(disposalContext);
         disposalContext.disposeAll();
+        gizmo.dispose();
     }
 
     private void putMatrix(float[] data, int offset, Matrix4 matrix) {

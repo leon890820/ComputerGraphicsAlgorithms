@@ -157,6 +157,10 @@ public class FBO {
         return depthTex;
     }
 
+    public int getId() {
+        return fbo == null ? 0 : fbo.get(0);
+    }
+
     void dispose() {
 
         if (tex != null) {

@@ -14,8 +14,8 @@ public class GPUSort {
     private ComputeBuffer offsetBuffer;
 
     public GPUSort() {
-        sortShader = new ComputeShader("/shaders/bitonic_sort.comp");
-        calculateOffsetsShader = new ComputeShader("/shaders/calculate_offsets.comp");
+        sortShader = new ComputeShader("/shaders/sort/bitonic_sort.comp");
+        calculateOffsetsShader = new ComputeShader("/shaders/sort/calculate_offsets.comp");
     }
 
     public void setBuffers(ComputeBuffer indexBuffer, ComputeBuffer offsetBuffer) {

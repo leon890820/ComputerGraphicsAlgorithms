@@ -1,0 +1,48 @@
+#version 430
+
+layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer Positions {
+    vec4 PositionsData[];
+};
+
+layout(std430, binding = 1) buffer Velocities {
+    vec4 VelocitiesData[];
+};
+
+uniform int numParticles;
+uniform float deltaTime;
+uniform float bounceDamping;
+uniform float floorY;
+uniform float floorFriction;
+uniform float floorFrictionDistance;
+
+void resolveCollisions(inout vec3 position, inout vec3 velocity) {
+    if (position.y < floorY) {
+        position.y = floorY;
+        velocity.y = abs(velocity.y) * bounceDamping;
+    }
+
+    float contact = 1.0 - clamp((position.y - floorY) / max(floorFrictionDistance, 0.0001), 0.0, 1.0);
+    if (contact > 0.0) {
+        float friction = clamp(floorFriction * contact * deltaTime, 0.0, 1.0);
+        velocity.xz *= 1.0 - friction;
+    }
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    if (id >= uint(numParticles)) {
+        return;
+    }
+
+    vec3 position = PositionsData[id].xyz;
+    vec3 velocity = VelocitiesData[id].xyz;
+
+    position += velocity * deltaTime;
+    resolveCollisions(position, velocity);
+
+    PositionsData[id] = vec4(position, 1.0);
+    VelocitiesData[id] = vec4(velocity, 0.0);
+}

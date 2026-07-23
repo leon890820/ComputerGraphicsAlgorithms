@@ -2,7 +2,7 @@ package org.example.engine.component;
 
 import org.example.engine.mesh.Mesh;
 
-public class MeshFilter {
+public class MeshFilter extends Component {
 
     private Mesh mesh;
 

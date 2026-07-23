@@ -30,7 +30,7 @@ public class SceneC implements IScene {
         );
 
         PhongMaterial guraMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
 
         gura = new MeshObject("../../Model/Hololive/gura.glb", guraMaterial);
         gura.playAnimation("smolguraAnimationsRESOURCE");
@@ -50,7 +50,7 @@ public class SceneC implements IScene {
         ina.setPosition(-3f, 0f, 0f).setScale(3f, 3f, 3f);
 
         PhongMaterial floorMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
         floorMaterial.setTexture(new Texture("/textures/Floor.png"));
 
         MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);

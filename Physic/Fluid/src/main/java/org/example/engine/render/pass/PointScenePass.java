@@ -1,6 +1,7 @@
 package org.example.engine.render.pass;
 
 import org.example.engine.gl.*;
+import org.example.engine.component.MeshRenderer;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.material.PointLightMaterial;
@@ -11,7 +12,7 @@ import org.example.engine.render.RenderContext;
 public class PointScenePass extends RenderPass {
     PointLightMaterial pointLightMaterial;
     public PointScenePass(){
-        pointLightMaterial = new PointLightMaterial("/shaders/pointLight.frag", "/shaders/quad.vert");
+        pointLightMaterial = new PointLightMaterial("/shaders/lights/pointLight.frag", "/shaders/core/quad.vert");
     }
 
     public void render(RenderContext ctx, GBuffer gBuffer, PointLight light, TextureCube shadowDepth) {
@@ -24,7 +25,9 @@ public class PointScenePass extends RenderPass {
         ctx.activeLight = light;
         try {
             Camera camera = ctx.camera;
-            camera.runWithMaterial(ctx, pointLightMaterial);
+            for (MeshRenderer renderer : camera.getMeshRenderers()) {
+                renderer.render(ctx, pointLightMaterial);
+            }
         } finally {
             ctx.activeLight = previousLight;
         }

@@ -159,6 +159,13 @@ public class ComputeShader {
         }
     }
 
+    public void setInt(String name, int x, int y, int z) {
+        int location = getUniformLocation(name);
+        if (location >= 0) {
+            glUniform3i(location, x, y, z);
+        }
+    }
+
     public void setVector4(String name, float x, float y, float z, float w) {
         int location = getUniformLocation(name);
         if (location >= 0) {

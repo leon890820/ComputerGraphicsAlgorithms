@@ -4,6 +4,7 @@ import org.example.engine.material.Material;
 import org.example.engine.material.MaterialRenderData;
 import org.example.engine.light.Light;
 import org.example.engine.mesh.Mesh;
+import org.example.engine.component.Component;
 import org.example.engine.component.MeshFilter;
 import org.example.engine.component.MeshRenderer;
 import org.example.engine.mesh.SubMesh;
@@ -23,11 +24,13 @@ public abstract class GameObject {
 
     MeshFilter meshFilter;
     ArrayList<MeshRenderer> meshRenderers;
+    ArrayList<Component> components;
     Animator animator;
 
     public GameObject() {
         transform = new Transform();
         meshRenderers = new ArrayList<>();
+        components = new ArrayList<>();
     }
 
     public GameObject setTransform(Transform trans) {
@@ -72,11 +75,15 @@ public abstract class GameObject {
     }
 
     public GameObject setMesh(Mesh m) {
-        if (meshFilter == null) {
-            meshFilter = new MeshFilter(m);
+        MeshFilter filter = getComponent(MeshFilter.class);
+
+        if (filter == null) {
+            filter = addComponent(new MeshFilter(m));
         } else {
-            meshFilter.setMesh(m);
+            filter.setMesh(m);
         }
+
+        meshFilter = filter;
         return this;
     }
 
@@ -85,6 +92,9 @@ public abstract class GameObject {
     }
 
     public GameObject setAnimator(Animator animator) {
+        if (animator != null && animator.getGameObject() != this) {
+            addComponent(animator);
+        }
         this.animator = animator;
         return this;
     }
@@ -118,6 +128,7 @@ public abstract class GameObject {
         for (MeshRenderer mr : meshRenderers) {
             if (mr != null) {
                 mr.dispose();
+                components.remove(mr);
             }
         }
         meshRenderers.clear();
@@ -130,12 +141,9 @@ public abstract class GameObject {
     }
 
     public void dispose(ResourceDisposalContext disposalContext) {
-        for (MeshRenderer renderer : meshRenderers) {
-            if (renderer == null) {
-                continue;
-            }
-
-            if (disposalContext != null) {
+        for (Component component : new ArrayList<>(components)) {
+            if (component instanceof MeshRenderer && disposalContext != null) {
+                MeshRenderer renderer = (MeshRenderer) component;
                 disposalContext.trackMaterial(renderer.getMaterial());
 
                 SubMesh subMesh = renderer.getSubMesh();
@@ -144,10 +152,116 @@ public abstract class GameObject {
                 }
             }
 
-            renderer.dispose();
+            component.dispose();
         }
 
+        components.clear();
         meshRenderers.clear();
+    }
+
+    public <T extends Component> T addComponent(T component) {
+        if (component == null) {
+            return null;
+        }
+
+        if (!components.contains(component)) {
+            components.add(component);
+            component.attach(this);
+        }
+
+        if (component instanceof MeshFilter) {
+            meshFilter = (MeshFilter) component;
+        }
+
+        if (component instanceof MeshRenderer && !meshRenderers.contains(component)) {
+            meshRenderers.add((MeshRenderer) component);
+        }
+
+        if (component instanceof Animator) {
+            animator = (Animator) component;
+        }
+
+        return component;
+    }
+
+    public <T extends Component> T getComponent(Class<T> type) {
+        if (type == null) {
+            return null;
+        }
+
+        for (Component component : components) {
+            if (type.isInstance(component)) {
+                return type.cast(component);
+            }
+        }
+
+        return null;
+    }
+
+    public <T extends Component> ArrayList<T> getComponents(Class<T> type) {
+        ArrayList<T> result = new ArrayList<>();
+
+        if (type == null) {
+            return result;
+        }
+
+        for (Component component : components) {
+            if (type.isInstance(component)) {
+                result.add(type.cast(component));
+            }
+        }
+
+        return result;
+    }
+
+    public ArrayList<Component> getComponents() {
+        return components;
+    }
+
+    public void startComponentsIfNeeded() {
+        for (Component component : components) {
+            component.startIfNeeded();
+        }
+    }
+
+    public void updateComponents(float deltaTime) {
+        startComponentsIfNeeded();
+
+        for (Component component : components) {
+            if (component.isEnabled()) {
+                component.update(deltaTime);
+            }
+        }
+    }
+
+    public void renderComponents(RenderContext ctx) {
+        startComponentsIfNeeded();
+
+        for (Component component : components) {
+            if (component.isEnabled()) {
+                component.render(ctx);
+            }
+        }
+    }
+
+    public void renderDefaultComponents(RenderContext ctx) {
+        startComponentsIfNeeded();
+
+        for (Component component : components) {
+            if (component.isEnabled() && component.isRenderedByDefaultPipeline()) {
+                component.render(ctx);
+            }
+        }
+    }
+
+    public void renderCustomComponents(RenderContext ctx) {
+        startComponentsIfNeeded();
+
+        for (Component component : components) {
+            if (component.isEnabled() && !component.isRenderedByDefaultPipeline()) {
+                component.render(ctx);
+            }
+        }
     }
 
     public ArrayList<MeshRenderer> getMeshRenderers() {
@@ -164,70 +278,6 @@ public abstract class GameObject {
 
     Vector3 getScale() {
         return transform.scale;
-    }
-
-    public void run() {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.render(createMaterialRenderData(null, mr));
-            }
-        }
-    }
-
-    public void run(RenderContext ctx) {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.render(createMaterialRenderData(ctx, mr));
-            }
-        }
-    }
-
-    public void runWithMaterial(Material overrideMaterial) {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.render(createMaterialRenderData(null, mr), overrideMaterial);
-            }
-        }
-    }
-
-    public void runWithMaterial(RenderContext ctx, Material overrideMaterial) {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.render(createMaterialRenderData(ctx, mr), overrideMaterial);
-            }
-        }
-    }
-
-    public void debugRun() {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.debugRender(createMaterialRenderData(null, mr));
-            }
-        }
-    }
-
-    public void debugRun(RenderContext ctx) {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.debugRender(createMaterialRenderData(ctx, mr));
-            }
-        }
-    }
-
-    public void debugRunWithMaterial(Material overrideMaterial) {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.debugRender(createMaterialRenderData(null, mr), overrideMaterial);
-            }
-        }
-    }
-
-    public void debugRunWithMaterial(RenderContext ctx, Material overrideMaterial) {
-        for (MeshRenderer mr : meshRenderers) {
-            if (mr != null) {
-                mr.debugRender(createMaterialRenderData(ctx, mr), overrideMaterial);
-            }
-        }
     }
 
     public Matrix4 localToWorld() {
@@ -273,7 +323,7 @@ public abstract class GameObject {
         for (SubMesh sub : subs) {
             MeshRenderer mr = new MeshRenderer(sub, defaultMaterial);
             mr.initialize();
-            meshRenderers.add(mr);
+            addComponent(mr);
         }
     }
 
@@ -290,7 +340,7 @@ public abstract class GameObject {
         return meshRenderers.get(0).getMaterial();
     }
 
-    protected MaterialRenderData createMaterialRenderData(
+    public MaterialRenderData createMaterialRenderData(
             RenderContext ctx,
             MeshRenderer meshRenderer
     ) {

@@ -29,6 +29,10 @@ public class Main {
     private double mouseY;
     private double mouseDeltaX;
     private double mouseDeltaY;
+    private boolean leftMouseDown;
+    private boolean leftMousePressed;
+    private boolean leftMouseReleased;
+    private boolean sceneDControlSlime = true;
 
     private Window window;
     private Camera main_camera;
@@ -104,7 +108,10 @@ public class Main {
 
         move(window);
         updateSceneDControls(deltaTime);
+        updateSceneDGizmo();
+        updateSceneDCameraFollow();
 
+        scene.update(deltaTime);
         currentScene.update(a);
         a += 0.02f;
 
@@ -160,6 +167,22 @@ public class Main {
                 setScene(SceneType.D);
             }
 
+            if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
+                toggleSceneDGizmoMode();
+            }
+
+            if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+                toggleSceneDFluidRenderMode();
+            }
+
+            if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+                toggleSceneDDebugDraw();
+            }
+
+            if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
+                toggleSceneDMoveTarget();
+            }
+
             updateColliderInput(key, pressed);
         });
 
@@ -175,6 +198,16 @@ public class Main {
             mouseDeltaY += mouseY - y;
             mouseX = x;
             mouseY = y;
+        });
+
+        glfwSetMouseButtonCallback(handle, (w, button, action, mods) -> {
+            if (button != GLFW_MOUSE_BUTTON_LEFT) {
+                return;
+            }
+
+            leftMouseDown = action != GLFW_RELEASE;
+            leftMousePressed = action == GLFW_PRESS;
+            leftMouseReleased = action == GLFW_RELEASE;
         });
     }
 
@@ -205,26 +238,28 @@ public class Main {
         mouseDeltaX = 0.0;
         mouseDeltaY = 0.0;
 
-        Matrix4 camMat = main_camera.localToWorld();
+        if (!(currentScene instanceof SceneD) || !sceneDControlSlime) {
+            Matrix4 camMat = main_camera.localToWorld();
 
-        Vector3 forward =
-                camMat.transformDirection(new Vector3(0, 0, -1)).unit_vector();
+            Vector3 forward =
+                    camMat.transformDirection(new Vector3(0, 0, -1)).unit_vector();
 
-        Vector3 right =
-                camMat.transformDirection(new Vector3(1, 0, 0)).unit_vector();
+            Vector3 right =
+                    camMat.transformDirection(new Vector3(1, 0, 0)).unit_vector();
 
-        float walkSpeed = currentScene.getWalkSpeed();
+            float walkSpeed = currentScene.getWalkSpeed();
 
-        float wx = key_input[3] ? walkSpeed :
-                key_input[1] ? -walkSpeed : 0.0f;
+            float wx = key_input[3] ? walkSpeed :
+                    key_input[1] ? -walkSpeed : 0.0f;
 
-        float wz = key_input[0] ? walkSpeed :
-                key_input[2] ? -walkSpeed : 0.0f;
+            float wz = key_input[0] ? walkSpeed :
+                    key_input[2] ? -walkSpeed : 0.0f;
 
-        Vector3 mv = forward.mult(wz).add(right.mult(wx));
-        Vector3 pos = main_camera.transform.position.add(mv);
+            Vector3 mv = forward.mult(wz).add(right.mult(wx));
+            Vector3 pos = main_camera.transform.position.add(mv);
 
-        main_camera.setPosition(pos);
+            main_camera.setPosition(pos);
+        }
         main_camera.update();
     }
 
@@ -247,6 +282,7 @@ public class Main {
 
         scene = currentScene.load(main_camera, WIDTH, HEIGHT);
         ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
+        sceneDControlSlime = true;
         a = 0.0f;
     }
 
@@ -306,16 +342,16 @@ public class Main {
                 (colliderInput[COLLIDER_SHRINK] ? -resizeStep : 0.0f);
 
         float xDelta =
-                (colliderInput[COLLIDER_X_POS] ? resizeStep : 0.0f) +
-                (colliderInput[COLLIDER_X_NEG] ? -resizeStep : 0.0f);
+                (colliderInput[COLLIDER_X_POS] ? moveStep : 0.0f) +
+                (colliderInput[COLLIDER_X_NEG] ? -moveStep : 0.0f);
 
         float yDelta =
-                (colliderInput[COLLIDER_Y_POS] ? resizeStep : 0.0f) +
-                (colliderInput[COLLIDER_Y_NEG] ? -resizeStep : 0.0f);
+                (colliderInput[COLLIDER_Y_POS] ? moveStep : 0.0f) +
+                (colliderInput[COLLIDER_Y_NEG] ? -moveStep : 0.0f);
 
         float zDelta =
-                (colliderInput[COLLIDER_Z_POS] ? resizeStep : 0.0f) +
-                (colliderInput[COLLIDER_Z_NEG] ? -resizeStep : 0.0f);
+                (colliderInput[COLLIDER_Z_POS] ? moveStep : 0.0f) +
+                (colliderInput[COLLIDER_Z_NEG] ? -moveStep : 0.0f);
 
         float centerYDelta =
                 (colliderInput[COLLIDER_CENTER_UP] ? moveStep : 0.0f) +
@@ -325,12 +361,106 @@ public class Main {
             sceneD.addColliderUniformSize(uniformDelta);
         }
 
+        if (sceneDControlSlime) {
+            Vector3 wasdDelta = calculateSceneDWasdDelta(moveStep);
+            if (!wasdDelta.near_zero()) {
+                sceneD.addSlimePosition(wasdDelta);
+            }
+        }
+
         if (xDelta != 0.0f || yDelta != 0.0f || zDelta != 0.0f) {
-            sceneD.addColliderSize(xDelta, yDelta, zDelta);
+            sceneD.addSlimePosition(xDelta, yDelta, zDelta);
         }
 
         if (centerYDelta != 0.0f) {
-            sceneD.addColliderCenter(0.0f, centerYDelta, 0.0f);
+            sceneD.addSlimePosition(0.0f, centerYDelta, 0.0f);
+        }
+    }
+
+    private void updateSceneDGizmo() {
+        if (currentScene instanceof SceneD) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.updateColliderGizmo(
+                    main_camera,
+                    WIDTH,
+                    HEIGHT,
+                    mouseX,
+                    mouseY,
+                    leftMouseDown,
+                    leftMousePressed,
+                    leftMouseReleased
+            );
+        }
+
+        leftMousePressed = false;
+        leftMouseReleased = false;
+    }
+
+    private Vector3 calculateSceneDWasdDelta(float moveStep) {
+        float wx = (key_input[3] ? moveStep : 0.0f) +
+                (key_input[1] ? -moveStep : 0.0f);
+
+        float wz = (key_input[0] ? moveStep : 0.0f) +
+                (key_input[2] ? -moveStep : 0.0f);
+
+        if (wx == 0.0f && wz == 0.0f) {
+            return Vector3.Zero();
+        }
+
+        Matrix4 camMat = main_camera.localToWorld();
+        Vector3 forward = camMat.transformDirection(new Vector3(0, 0, -1));
+        forward.y = 0.0f;
+        forward = forward.unit_vector();
+
+        Vector3 right = camMat.transformDirection(new Vector3(1, 0, 0));
+        right.y = 0.0f;
+        right = right.unit_vector();
+
+        Vector3 direction = forward.mult(wz).add(right.mult(wx));
+        if (direction.near_zero()) {
+            return Vector3.Zero();
+        }
+
+        return direction.unit_vector().mult(moveStep);
+    }
+
+    private void updateSceneDCameraFollow() {
+        if (currentScene instanceof SceneD && sceneDControlSlime) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.updateCameraFollow(main_camera);
+        }
+    }
+
+    private void toggleSceneDMoveTarget() {
+        if (!(currentScene instanceof SceneD)) {
+            return;
+        }
+
+        sceneDControlSlime = !sceneDControlSlime;
+        SceneD sceneD = (SceneD) currentScene;
+        sceneD.resetCameraFollowAnchor();
+
+        System.out.println("[SceneD] WASD target = " + getSceneDMoveTargetName());
+    }
+
+    private void toggleSceneDGizmoMode() {
+        if (currentScene instanceof SceneD) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.toggleColliderGizmoMode();
+        }
+    }
+
+    private void toggleSceneDFluidRenderMode() {
+        if (currentScene instanceof SceneD) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.toggleFluidRenderMode();
+        }
+    }
+
+    private void toggleSceneDDebugDraw() {
+        if (currentScene instanceof SceneD) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.toggleDebugDraw();
         }
     }
 
@@ -345,9 +475,17 @@ public class Main {
         }
 
         int fps = (int) Math.round(frameCount / elapsed);
-        window.setTitle(WINDOW_TITLE + " | FPS: " + fps);
+        window.setTitle(WINDOW_TITLE + " | FPS: " + fps + " | Move: " + getSceneDMoveTargetName());
 
         frameCount = 0;
         fpsTimer = now;
+    }
+
+    private String getSceneDMoveTargetName() {
+        if (!(currentScene instanceof SceneD)) {
+            return "Camera";
+        }
+
+        return sceneDControlSlime ? "Slime" : "Camera";
     }
 }

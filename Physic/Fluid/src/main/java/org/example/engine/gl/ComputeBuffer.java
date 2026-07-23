@@ -106,8 +106,28 @@ public class ComputeBuffer {
         return result;
     }
 
+    public float[] getFloatData(int elementCount) {
+        int maxElementCount = count * stride / Float.BYTES;
+        int readElementCount = Math.max(0, Math.min(elementCount, maxElementCount));
+        FloatBuffer data = MemoryUtil.memAllocFloat(readElementCount);
+        float[] result = new float[readElementCount];
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        data.rewind();
+        data.get(result);
+        MemoryUtil.memFree(data);
+        return result;
+    }
+
     public void bindBase(int binding) {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, id);
+    }
+
+    public void bind(int target) {
+        glBindBuffer(target, id);
     }
 
     public int getId() {

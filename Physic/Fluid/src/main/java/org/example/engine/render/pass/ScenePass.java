@@ -1,5 +1,6 @@
 package org.example.engine.render.pass;
 import org.example.engine.gl.Texture;
+import org.example.engine.component.MeshRenderer;
 import org.example.engine.light.Light;
 import org.example.engine.material.LightMaterial;
 import org.example.engine.render.GBuffer;
@@ -23,7 +24,9 @@ public class ScenePass extends RenderPass {
         ctx.activeLight = light;
         try {
             Camera camera = ctx.camera;
-            camera.runWithMaterial(ctx, lightMaterial);
+            for (MeshRenderer renderer : camera.getMeshRenderers()) {
+                renderer.render(ctx, lightMaterial);
+            }
         } finally {
             ctx.activeLight = previousLight;
         }

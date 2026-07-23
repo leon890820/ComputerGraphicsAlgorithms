@@ -25,7 +25,7 @@ public class SceneB implements IScene {
         );
 
         PhongMaterial objectMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
 
         MeshObject leftObject =
                 new MeshObject("/meshes/Furina/Furina", objectMaterial);
@@ -33,7 +33,7 @@ public class SceneB implements IScene {
                 .setPosition(-1.2f, 0.0f, 0.0f);
 
         PhongMaterial rightMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
 
         MeshObject rightObject =
                 new MeshObject("/meshes/Furina/Furina", rightMaterial);
@@ -41,7 +41,7 @@ public class SceneB implements IScene {
                 .setPosition(1.2f, 0.0f, -0.5f);
 
         PhongMaterial floorMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
         floorMaterial.setTexture(new Texture("/textures/test.png"));
 
         MeshObject floor = new MeshObject("/meshes/quad", floorMaterial);

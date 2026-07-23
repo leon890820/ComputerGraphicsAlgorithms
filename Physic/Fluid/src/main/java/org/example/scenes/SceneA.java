@@ -25,13 +25,13 @@ public class SceneA implements IScene {
         );
 
         PhongMaterial phongMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
 
         MeshObject phongObject =
                 new MeshObject("/meshes/Furina/Furina", phongMaterial);
 
         PhongMaterial floorMaterial =
-                new PhongMaterial("/shaders/BlinnPhong.frag", "/shaders/BlinnPhong.vert");
+                new PhongMaterial("/shaders/core/BlinnPhong.frag", "/shaders/core/BlinnPhong.vert");
 
         Texture floorTexture = new Texture("/textures/Floor.png");
         floorMaterial.setTexture(floorTexture);
