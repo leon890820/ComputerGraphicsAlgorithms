@@ -22,6 +22,7 @@ uniform float concentration;
 uniform float containmentRadius;
 uniform float containmentStrength;
 uniform float maxSpeed;
+uniform vec3 velocityImpulse;
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
@@ -33,6 +34,7 @@ void main() {
     vec3 position = PositionsData[id].xyz;
     vec3 velocity = VelocitiesData[id].xyz;
 
+    velocity += velocityImpulse;
     velocity += gravity * deltaTime * 0.99;
 
     vec3 toCenter = center - position;

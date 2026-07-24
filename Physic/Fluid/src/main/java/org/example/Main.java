@@ -108,6 +108,7 @@ public class Main {
 
         move(window);
         updateSceneDControls(deltaTime);
+        updateSceneDJump(deltaTime);
         updateSceneDGizmo();
         updateSceneDCameraFollow();
 
@@ -181,6 +182,10 @@ public class Main {
 
             if (key == GLFW_KEY_TAB && action == GLFW_PRESS) {
                 toggleSceneDMoveTarget();
+            }
+
+            if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+                jumpSceneDSlime();
             }
 
             updateColliderInput(key, pressed);
@@ -396,6 +401,13 @@ public class Main {
         leftMouseReleased = false;
     }
 
+    private void updateSceneDJump(float deltaTime) {
+        if (currentScene instanceof SceneD) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.updateJump(deltaTime);
+        }
+    }
+
     private Vector3 calculateSceneDWasdDelta(float moveStep) {
         float wx = (key_input[3] ? moveStep : 0.0f) +
                 (key_input[1] ? -moveStep : 0.0f);
@@ -441,6 +453,13 @@ public class Main {
         sceneD.resetCameraFollowAnchor();
 
         System.out.println("[SceneD] WASD target = " + getSceneDMoveTargetName());
+    }
+
+    private void jumpSceneDSlime() {
+        if (currentScene instanceof SceneD) {
+            SceneD sceneD = (SceneD) currentScene;
+            sceneD.jumpSlime();
+        }
     }
 
     private void toggleSceneDGizmoMode() {

@@ -1,7 +1,7 @@
 package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
-import org.example.engine.component.MeshRenderer;
+import org.example.engine.component.render.MeshRenderer;
 import org.example.engine.light.Light;
 import org.example.engine.render.GBuffer;
 import org.example.engine.render.RenderContext;

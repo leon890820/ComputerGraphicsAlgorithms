@@ -1,5 +1,6 @@
-package org.example.engine.component;
+package org.example.engine.component.fluid;
 
+import org.example.engine.component.render.MeshRenderer;
 import org.example.engine.material.FluidRayMarchMaterial;
 import org.example.engine.render.RenderContext;
 

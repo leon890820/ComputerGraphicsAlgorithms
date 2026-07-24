@@ -2,7 +2,7 @@ package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
-import org.example.engine.component.MeshRenderer;
+import org.example.engine.component.render.MeshRenderer;
 import org.example.engine.light.Light;
 import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;

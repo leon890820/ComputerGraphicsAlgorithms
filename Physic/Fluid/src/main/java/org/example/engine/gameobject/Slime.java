@@ -1,10 +1,10 @@
 package org.example.engine.gameobject;
 
-import org.example.engine.component.FluidMaster;
-import org.example.engine.component.FluidRenderMode;
-import org.example.engine.component.ParticleBuffer;
-import org.example.engine.component.ParticleSimulator;
-import org.example.engine.component.ParticleSpawn;
+import org.example.engine.component.fluid.FluidMaster;
+import org.example.engine.component.fluid.FluidRenderMode;
+import org.example.engine.component.fluid.ParticleBuffer;
+import org.example.engine.component.fluid.ParticleSimulator;
+import org.example.engine.component.fluid.ParticleSpawn;
 import org.example.engine.gl.ComputeBuffer;
 import org.example.engine.math.Vector3;
 
@@ -20,6 +20,7 @@ public class Slime extends GameObject {
     private static final float DEFAULT_BOUNCE_DAMPING = 0.35f;
     private static final float DEFAULT_FLOOR_FRICTION = 8.0f;
     private static final float DEFAULT_FLOOR_FRICTION_DISTANCE = 0.12f;
+    private static final float DEFAULT_JUMP_IMPULSE = 4.8f;
 
     private final FluidMaster fluid;
 
@@ -60,6 +61,11 @@ public class Slime extends GameObject {
 
     public Slime setContainment(float radius, float strength, float maxSpeed) {
         fluid.setContainment(radius, strength, maxSpeed);
+        return this;
+    }
+
+    public Slime jump() {
+        fluid.getSimulator().addVelocityImpulse(0.0f, DEFAULT_JUMP_IMPULSE, 0.0f);
         return this;
     }
 

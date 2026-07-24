@@ -1,4 +1,4 @@
-package org.example.engine.component;
+package org.example.engine.component.core;
 
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;

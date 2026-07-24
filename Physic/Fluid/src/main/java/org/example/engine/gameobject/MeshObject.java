@@ -2,7 +2,7 @@ package org.example.engine.gameobject;
 
 import org.example.engine.material.Material;
 import org.example.engine.asset.Asset;
-import org.example.engine.component.Animator;
+import org.example.engine.component.core.Animator;
 import org.example.engine.importer.DefaultMeshAssetLoader;
 import org.example.engine.importer.LoadedMeshAsset;
 import org.example.engine.importer.MeshAssetLoader;

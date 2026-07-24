@@ -20,26 +20,40 @@ float sampleDensity(vec3 worldPosition) {
     return textureLod(densityTexture, clamp(uvw, 0.0, 1.0), 0.0).x;
 }
 
+float interpolateIsoDistance(float previousDistance, float distance, float previousDensity, float density) {
+    float denom = density - previousDensity;
+    if (abs(denom) < 0.0001) {
+        return distance;
+    }
+
+    float t = (isoLevel - previousDensity) / denom;
+    return mix(previousDistance, distance, clamp(t, 0.0, 1.0));
+}
+
 void main() {
     float previousDistance = 0.0;
     float previousDensity = sampleDensity(rayOrigin);
-    float lastInsideDistance = previousDensity >= isoLevel ? 0.0 : -1.0;
+    bool wasInside = previousDensity >= isoLevel;
+    bool hasEnteredSurface = wasInside;
+    float lastInsideDistance = wasInside ? 0.0 : -1.0;
 
     for (int i = 1; i <= probeSteps; i++) {
         float distance = maxDistance * float(i) / float(max(probeSteps, 1));
         float value = sampleDensity(rayOrigin + rayDirection * distance);
+        bool isInside = value >= isoLevel;
 
-        if (value >= isoLevel) {
+        if (isInside) {
+            hasEnteredSurface = true;
             lastInsideDistance = distance;
-        } else if (previousDensity >= isoLevel) {
-            float t = (isoLevel - previousDensity) / max(0.0001, value - previousDensity);
-            float surfaceDistance = mix(previousDistance, distance, clamp(t, 0.0, 1.0));
+        } else if (wasInside && hasEnteredSurface) {
+            float surfaceDistance = interpolateIsoDistance(previousDistance, distance, previousDensity, value);
             Result = vec4(surfaceDistance, 1.0, value, 0.0);
             return;
         }
 
         previousDistance = distance;
         previousDensity = value;
+        wasInside = isInside;
     }
 
     if (lastInsideDistance >= 0.0) {

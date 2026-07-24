@@ -1,7 +1,7 @@
 package org.example.engine.scene;
 
 import org.example.engine.gameobject.GameObject;
-import org.example.engine.component.Component;
+import org.example.engine.component.core.Component;
 import org.example.engine.light.Light;
 import org.example.engine.render.RenderContext;
 import org.example.engine.resource.ResourceDisposalContext;

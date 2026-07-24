@@ -1,4 +1,4 @@
-package org.example.engine.component;
+package org.example.engine.component.fluid;
 
 import java.nio.FloatBuffer;
 

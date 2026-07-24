@@ -1,5 +1,6 @@
-package org.example.engine.component;
+package org.example.engine.component.render;
 
+import org.example.engine.component.core.Component;
 import org.example.engine.material.Material;
 import org.example.engine.material.MaterialRenderData;
 import org.example.engine.mesh.SubMesh;

@@ -1,5 +1,6 @@
-package org.example.engine.component;
+package org.example.engine.component.fluid;
 
+import org.example.engine.component.core.Component;
 import org.example.engine.gl.ComputeBuffer;
 import org.example.engine.gl.ComputeHelper;
 import org.example.engine.gl.ComputeShader;

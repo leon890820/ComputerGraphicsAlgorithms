@@ -1,10 +1,11 @@
-package org.example.engine.component;
+package org.example.engine.component.fluid;
 
+import org.example.engine.component.core.Component;
 import org.example.engine.gl.ComputeBuffer;
 import org.example.engine.math.Vector3;
 
 public class FluidMaster extends Component {
-    private static final Vector3 DEFAULT_ATTRACTION_CENTER_OFFSET = new Vector3(0.0f, 0.5f, 0.0f);
+    private static final Vector3 DEFAULT_ATTRACTION_CENTER_OFFSET = new Vector3(0.0f,0.3f,0.0f);
     private static final float DEFAULT_COLLIDER_MARGIN = 0.2f;
 
     private final ParticleSpawn spawn;

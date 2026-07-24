@@ -1,10 +1,10 @@
 package org.example.engine.gameobject;
 
-import org.example.engine.component.FluidRenderMode;
-import org.example.engine.component.FluidMaster;
-import org.example.engine.component.ParticleBuffer;
-import org.example.engine.component.ParticleSimulator;
-import org.example.engine.component.ParticleSpawn;
+import org.example.engine.component.fluid.FluidRenderMode;
+import org.example.engine.component.fluid.FluidMaster;
+import org.example.engine.component.fluid.ParticleBuffer;
+import org.example.engine.component.fluid.ParticleSimulator;
+import org.example.engine.component.fluid.ParticleSpawn;
 import org.example.engine.gl.ComputeBuffer;
 
 public class ParticleDisplay3D extends GameObject {

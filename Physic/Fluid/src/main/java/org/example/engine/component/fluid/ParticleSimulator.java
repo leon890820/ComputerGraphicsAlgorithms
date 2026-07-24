@@ -1,4 +1,4 @@
-package org.example.engine.component;
+package org.example.engine.component.fluid;
 
 import org.example.engine.gl.ComputeHelper;
 import org.example.engine.gl.ComputeBuffer;
@@ -38,6 +38,7 @@ public class ParticleSimulator {
     private float containmentRadius = 1.0f;
     private float containmentStrength = 0.0f;
     private float maxSpeed = 8.0f;
+    private Vector3 velocityImpulse = new Vector3(0.0f);
     private float bounceDamping = 0.99f;
     private float floorY = 0.0f;
     private float floorFriction = 5.0f;
@@ -143,6 +144,17 @@ public class ParticleSimulator {
         containmentStrength = Math.max(0.0f, strength);
         this.maxSpeed = Math.max(0.0001f, maxSpeed);
         return this;
+    }
+
+    public ParticleSimulator addVelocityImpulse(Vector3 impulse) {
+        if (impulse != null) {
+            velocityImpulse = velocityImpulse.add(impulse);
+        }
+        return this;
+    }
+
+    public ParticleSimulator addVelocityImpulse(float x, float y, float z) {
+        return addVelocityImpulse(new Vector3(x, y, z));
     }
 
     public ParticleSimulator setBounceDamping(float bounceDamping) {
@@ -253,9 +265,11 @@ public class ParticleSimulator {
         externalForcesShader.setFloat("containmentRadius", containmentRadius);
         externalForcesShader.setFloat("containmentStrength", containmentStrength);
         externalForcesShader.setFloat("maxSpeed", maxSpeed);
+        externalForcesShader.setVector3("velocityImpulse", velocityImpulse);
         ComputeHelper.dispatch(externalForcesShader, buffer.getParticleCount());
         ComputeHelper.memoryBarrier();
         externalForcesShader.unbind();
+        velocityImpulse = new Vector3(0.0f);
     }
 
     private void runSpatialHash(ParticleBuffer buffer) {

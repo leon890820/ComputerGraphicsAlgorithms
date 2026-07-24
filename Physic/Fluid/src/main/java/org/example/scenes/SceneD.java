@@ -1,9 +1,9 @@
 package org.example.scenes;
 
-import org.example.engine.component.ColliderGizmo;
-import org.example.engine.component.DensitySurfaceProbe;
-import org.example.engine.component.FluidRenderMode;
-import org.example.engine.component.MeshRenderer;
+import org.example.engine.component.fluid.ColliderGizmo;
+import org.example.engine.component.fluid.DensitySurfaceProbe;
+import org.example.engine.component.fluid.FluidRenderMode;
+import org.example.engine.component.render.MeshRenderer;
 import org.example.engine.gameobject.MeshObject;
 import org.example.engine.gameobject.Slime;
 import org.example.engine.gl.Texture;
@@ -15,7 +15,8 @@ import org.example.engine.scene.Scene;
 
 public class SceneD implements IScene {
     private static final float EYE_HEIGHT = 0.62f;
-    private static final float EYE_PITCH = 0.6f;
+    private static final float EYE_HEIGHT_NORMALIZED = 0.58f;
+    private static final float EYE_PITCH = 0.4f;
     private static final float EYE_SCALE = 0.2f;
     private static final float EYE_FALLBACK_SURFACE_DISTANCE = 0.25f;
     private static final float EYE_MIN_SURFACE_DISTANCE = 0.16f;
@@ -23,9 +24,16 @@ public class SceneD implements IScene {
     private static final float EYE_SURFACE_ISO_LEVEL = 10.0f;
     private static final float EYE_DIRECTION_SMOOTH = 0.14f;
     private static final float EYE_POSITION_SMOOTH = 0.22f;
+    private static final float EYE_JUMP_POSITION_SMOOTH = 0.68f;
+    private static final float EYE_DISTANCE_SMOOTH = 0.35f;
+    private static final float EYE_JUMP_DISTANCE_SMOOTH = 0.75f;
     private static final float EYE_ROTATION_SMOOTH = 0.18f;
     private static final int EYE_DENSITY_PROBE_STEPS = 96;
     private static final int EYE_DENSITY_PROBE_INTERVAL = 1;
+    private static final float SLIME_FLOOR_Y = 0.0f;
+    private static final float SLIME_TRANSFORM_JUMP_SPEED = 1.8f;
+    private static final float SLIME_TRANSFORM_JUMP_GRAVITY = 7.5f;
+    private static final float SLIME_GROUNDED_EPSILON = 0.03f;
 
     private Slime slime;
     private MeshObject eye;
@@ -37,6 +45,8 @@ public class SceneD implements IScene {
     private float smoothedEyeYaw = 3.1415926f;
     private float cachedEyeSurfaceDistance = EYE_FALLBACK_SURFACE_DISTANCE;
     private int eyeDensityProbeFrame;
+    private float slimeVerticalVelocity;
+    private boolean jumpMovesTransform = true;
     private boolean debugDrawEnabled = true;
 
     @Override
@@ -108,6 +118,29 @@ public class SceneD implements IScene {
         if (delta != null) {
             addSlimePosition(delta.x, delta.y, delta.z);
         }
+    }
+
+    public void jumpSlime() {
+        if (slime == null) {
+            return;
+        }
+
+        slime.jump();
+        eyeDensityProbeFrame = EYE_DENSITY_PROBE_INTERVAL;
+
+        if (jumpMovesTransform && isSlimeGrounded()) {
+            slimeVerticalVelocity = SLIME_TRANSFORM_JUMP_SPEED;
+        }
+    }
+
+    public void updateJump(float deltaTime) {
+        if (jumpMovesTransform) {
+            updateSlimeTransformJump(deltaTime);
+        }
+    }
+
+    public void setJumpMovesTransform(boolean jumpMovesTransform) {
+        this.jumpMovesTransform = jumpMovesTransform;
     }
 
     public void updateCameraFollow(Camera camera) {
@@ -212,6 +245,36 @@ public class SceneD implements IScene {
         return eyeObject;
     }
 
+    private void updateSlimeTransformJump(float deltaTime) {
+        if (slime == null || deltaTime <= 0.0f || deltaTime > 0.25f) {
+            return;
+        }
+
+        if (isSlimeGrounded() && slimeVerticalVelocity <= 0.0f) {
+            if (slime.transform.position.y != SLIME_FLOOR_Y) {
+                slime.setPosition(slime.transform.position.x, SLIME_FLOOR_Y, slime.transform.position.z);
+            }
+            slimeVerticalVelocity = 0.0f;
+            return;
+        }
+
+        slimeVerticalVelocity -= SLIME_TRANSFORM_JUMP_GRAVITY * deltaTime;
+        Vector3 nextPosition = slime.transform.position.add(new Vector3(0.0f, slimeVerticalVelocity * deltaTime, 0.0f));
+
+        if (nextPosition.y <= SLIME_FLOOR_Y) {
+            slime.setPosition(nextPosition.x, SLIME_FLOOR_Y, nextPosition.z);
+            slimeVerticalVelocity = 0.0f;
+            return;
+        }
+
+        slime.setPosition(nextPosition);
+    }
+
+    private boolean isSlimeGrounded() {
+        return slime != null
+                && slime.transform.position.y <= SLIME_FLOOR_Y + SLIME_GROUNDED_EPSILON;
+    }
+
     private void updateEyeTransform() {
         updateEyeTransform(false);
     }
@@ -231,19 +294,22 @@ public class SceneD implements IScene {
             }
         }
 
-        Vector3 slimePosition = slime.transform.position;
+        Vector3 boundsCenter = slime.getSimulator().getDensityBoundsCenter();
+        Vector3 boundsSize = slime.getSimulator().getDensityBoundsSize();
+        Vector3 eyeOrigin = getEyeProbeOrigin(boundsCenter, boundsSize);
         Vector3 faceOffset = smoothedEyeDirection.mult(cachedEyeSurfaceDistance + EYE_SURFACE_OFFSET);
         Vector3 targetPosition = new Vector3(
-                slimePosition.x + faceOffset.x,
-                slimePosition.y + EYE_HEIGHT,
-                slimePosition.z + faceOffset.z
+                eyeOrigin.x + faceOffset.x,
+                eyeOrigin.y,
+                eyeOrigin.z + faceOffset.z
         );
         float targetYaw = (float) Math.atan2(smoothedEyeDirection.x, smoothedEyeDirection.z) + 3.1415926f;
 
         if (smoothedEyePosition == null) {
             smoothedEyePosition = targetPosition;
         } else {
-            smoothedEyePosition = lerp(smoothedEyePosition, targetPosition, EYE_POSITION_SMOOTH);
+            float positionSmooth = isSlimeJumping() ? EYE_JUMP_POSITION_SMOOTH : EYE_POSITION_SMOOTH;
+            smoothedEyePosition = lerp(smoothedEyePosition, targetPosition, positionSmooth);
         }
         smoothedEyeYaw = lerpAngle(smoothedEyeYaw, targetYaw, EYE_ROTATION_SMOOTH);
 
@@ -281,7 +347,7 @@ public class SceneD implements IScene {
 
         Vector3 boundsCenter = slime.getSimulator().getDensityBoundsCenter();
         Vector3 boundsSize = slime.getSimulator().getDensityBoundsSize();
-        Vector3 origin = slime.transform.position.add(new Vector3(0.0f, EYE_HEIGHT, 0.0f));
+        Vector3 origin = getEyeProbeOrigin(boundsCenter, boundsSize);
         float maxDistance = estimateRayDistanceToDensityBounds(origin, smoothedEyeDirection, boundsCenter, boundsSize);
         if (maxDistance <= 0.0f) {
             return cachedEyeSurfaceDistance;
@@ -302,7 +368,43 @@ public class SceneD implements IScene {
             return cachedEyeSurfaceDistance;
         }
 
-        return lerp(cachedEyeSurfaceDistance, distance, 0.35f);
+        float distanceSmooth = isSlimeJumping() ? EYE_JUMP_DISTANCE_SMOOTH : EYE_DISTANCE_SMOOTH;
+        return lerp(cachedEyeSurfaceDistance, distance, distanceSmooth);
+    }
+
+    private Vector3 getEyeProbeOrigin(Vector3 boundsCenter, Vector3 boundsSize) {
+        if (boundsCenter == null || boundsSize == null || slime == null) {
+            return slime == null
+                    ? new Vector3(0.0f, EYE_HEIGHT, 0.0f)
+                    : slime.transform.position.add(new Vector3(0.0f, EYE_HEIGHT, 0.0f));
+        }
+
+        float halfHeight = boundsSize.y * 0.5f;
+        float minY = boundsCenter.y - halfHeight + 0.0001f;
+        float maxY = boundsCenter.y + halfHeight - 0.0001f;
+        float targetY = minY + (maxY - minY) * EYE_HEIGHT_NORMALIZED;
+
+        return new Vector3(
+                boundsCenter.x,
+                clamp(targetY, minY, maxY),
+                boundsCenter.z
+        );
+    }
+
+    private boolean isSlimeJumping() {
+        if (Math.abs(slimeVerticalVelocity) > 0.01f
+                || (slime != null && slime.transform.position.y > SLIME_FLOOR_Y + SLIME_GROUNDED_EPSILON)) {
+            return true;
+        }
+
+        if (slime == null) {
+            return false;
+        }
+
+        Vector3 boundsCenter = slime.getSimulator().getDensityBoundsCenter();
+        Vector3 boundsSize = slime.getSimulator().getDensityBoundsSize();
+        float densityMinY = boundsCenter.y - boundsSize.y * 0.5f;
+        return densityMinY > SLIME_FLOOR_Y + SLIME_GROUNDED_EPSILON;
     }
 
     private float estimateRayDistanceToDensityBounds(
@@ -328,6 +430,10 @@ public class SceneD implements IScene {
         }
 
         return Math.max(EYE_FALLBACK_SURFACE_DISTANCE, maxDistance);
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(value, max));
     }
 
     private float clamp01(float value) {

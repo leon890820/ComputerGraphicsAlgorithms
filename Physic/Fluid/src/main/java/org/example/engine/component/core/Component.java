@@ -1,4 +1,4 @@
-package org.example.engine.component;
+package org.example.engine.component.core;
 
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.render.RenderContext;
