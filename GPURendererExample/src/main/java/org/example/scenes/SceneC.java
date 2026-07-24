@@ -71,10 +71,6 @@ public class SceneC implements IScene {
 
     @Override
     public void update(float time) {
-        gura.updateAnimation(time);
-        ina.updateAnimation(time);
-        calli.updateAnimation(time);
-        ame.updateAnimation(time);
     }
 
     @Override

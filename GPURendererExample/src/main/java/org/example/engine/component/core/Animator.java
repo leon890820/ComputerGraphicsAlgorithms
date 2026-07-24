@@ -1,4 +1,4 @@
-package org.example.engine.component;
+package org.example.engine.component.core;
 
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
@@ -10,7 +10,7 @@ import org.example.engine.asset.animation.NodeAnimation;
 import org.example.engine.asset.skin.Bone;
 import org.example.engine.asset.skin.Skin;
 
-public class Animator {
+public class Animator extends Component {
 
     private static final Matrix4[] EMPTY_MATRICES = new Matrix4[0];
 

@@ -2,7 +2,7 @@ package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
 import org.example.engine.gl.Texture;
-import org.example.engine.gameobject.GameObject;
+import org.example.engine.component.render.MeshRenderer;
 import org.example.engine.light.Light;
 import org.example.engine.material.*;
 import org.example.engine.render.RenderContext;
@@ -24,8 +24,10 @@ public class ShadowPass extends RenderPass {
         Light previousLight = ctx.activeLight;
         ctx.activeLight = light;
         try {
-            for(GameObject go : ctx.scene.getObjects()){
-                go.runWithMaterial(ctx, shadowMaterial);
+            for (MeshRenderer renderer : ctx.scene.getComponents(MeshRenderer.class)) {
+                if (renderer.isEnabled() && renderer.isRenderedByDefaultPipeline()) {
+                    renderer.render(ctx, shadowMaterial);
+                }
             }
         } finally {
             ctx.activeLight = previousLight;

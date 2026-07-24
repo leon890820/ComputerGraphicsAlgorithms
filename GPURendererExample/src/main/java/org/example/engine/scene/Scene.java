@@ -1,7 +1,9 @@
 package org.example.engine.scene;
 
 import org.example.engine.gameobject.GameObject;
+import org.example.engine.component.core.Component;
 import org.example.engine.light.Light;
+import org.example.engine.render.RenderContext;
 import org.example.engine.resource.ResourceDisposalContext;
 
 import java.util.ArrayList;
@@ -12,12 +14,6 @@ public class Scene {
     ArrayList<Light> lights = new ArrayList<>();
 
     Camera camera;
-    RenderMode renderMode = RenderMode.STANDARD;
-
-    public enum RenderMode {
-        STANDARD,
-        COMPUTE_EXAMPLE
-    }
 
     public Scene setCamera(Camera cam) {
         this.camera = cam;
@@ -38,17 +34,56 @@ public class Scene {
         return this;
     }
 
-    public Scene setRenderMode(RenderMode renderMode) {
-        this.renderMode = renderMode == null ? RenderMode.STANDARD : renderMode;
-        return this;
-    }
-
-    public RenderMode getRenderMode() {
-        return renderMode;
-    }
-
     public ArrayList<GameObject> getObjects() {
         return objects;
+    }
+
+    public <T extends Component> ArrayList<T> getComponents(Class<T> type) {
+        ArrayList<T> result = new ArrayList<>();
+
+        if (type == null) {
+            return result;
+        }
+
+        for (GameObject object : objects) {
+            if (object != null) {
+                result.addAll(object.getComponents(type));
+            }
+        }
+
+        return result;
+    }
+
+    public void update(float deltaTime) {
+        for (GameObject object : objects) {
+            if (object != null) {
+                object.updateComponents(deltaTime);
+            }
+        }
+    }
+
+    public void render(RenderContext ctx) {
+        for (GameObject object : objects) {
+            if (object != null) {
+                object.renderComponents(ctx);
+            }
+        }
+    }
+
+    public void renderDefault(RenderContext ctx) {
+        for (GameObject object : objects) {
+            if (object != null) {
+                object.renderDefaultComponents(ctx);
+            }
+        }
+    }
+
+    public void renderCustom(RenderContext ctx) {
+        for (GameObject object : objects) {
+            if (object != null) {
+                object.renderCustomComponents(ctx);
+            }
+        }
     }
 
     public ArrayList<Light> getLights() {
@@ -73,6 +108,5 @@ public class Scene {
         objects.clear();
         lights.clear();
         camera = null;
-        renderMode = RenderMode.STANDARD;
     }
 }

@@ -1,8 +1,9 @@
-package org.example.engine.component;
+package org.example.engine.component.render;
 
+import org.example.engine.component.core.Component;
 import org.example.engine.mesh.Mesh;
 
-public class MeshFilter {
+public class MeshFilter extends Component {
 
     private Mesh mesh;
 

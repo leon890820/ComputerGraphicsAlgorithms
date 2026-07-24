@@ -35,6 +35,7 @@ public class Main {
     private SceneType currentSceneType = SceneType.D;
 
     private float a = 0;
+    private double lastFrameTime;
 
     private enum SceneType {
         A,
@@ -67,6 +68,7 @@ public class Main {
     private void setup() {
         window = new Window(WIDTH, HEIGHT, "GPU Renderer - SceneD Compute Example");
         window.create();
+        lastFrameTime = glfwGetTime();
 
         setupInput(window);
 
@@ -74,12 +76,17 @@ public class Main {
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.D);
+        setScene(SceneType.C);
     }
 
     private void draw() {
+        double now = glfwGetTime();
+        float deltaTime = (float) (now - lastFrameTime);
+        lastFrameTime = now;
+
         move(window);
 
+        scene.update(deltaTime);
         currentScene.update(a);
         a += 0.02f;
 

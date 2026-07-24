@@ -3,6 +3,7 @@ package org.example.engine.render.pass;
 import org.example.engine.gl.ComputeHelper;
 import org.example.engine.gl.ComputeShader;
 import org.example.engine.gl.Texture3D;
+import org.example.engine.component.render.MeshRenderer;
 import org.example.engine.material.VolumeSliceMaterial;
 import org.example.engine.render.RenderContext;
 
@@ -35,8 +36,16 @@ public class ComputeExamplePass extends RenderPass {
 
         float sliceDepth = 0.5f + 0.5f * (float) Math.sin(time * 0.7f);
         sliceMaterial.setSliceDepth(sliceDepth);
-        ctx.camera.runWithMaterial(ctx, sliceMaterial);
+        for (MeshRenderer renderer : ctx.camera.getMeshRenderers()) {
+            renderer.render(ctx, sliceMaterial);
+        }
 
         time += 0.016f;
+    }
+
+    public void dispose() {
+        computeShader.dispose();
+        volumeTexture.dispose();
+        sliceMaterial.dispose();
     }
 }

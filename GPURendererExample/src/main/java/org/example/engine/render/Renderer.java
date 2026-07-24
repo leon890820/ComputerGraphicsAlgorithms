@@ -5,7 +5,8 @@ import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
 import org.example.engine.light.SpotLight;
 import org.example.engine.render.pass.*;
-import org.example.engine.scene.Scene;
+
+import static org.lwjgl.opengl.GL33.*;
 
 public class Renderer {
     private static final int SHADOW_SIZE = 1024;
@@ -16,7 +17,6 @@ public class Renderer {
     private final ScenePass spotScenePass;
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
-    private final ComputeExamplePass computeExamplePass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
@@ -26,21 +26,37 @@ public class Renderer {
         spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
-        computeExamplePass = new ComputeExamplePass(screenWidth, screenHeight);
     }
 
     public void render(RenderContext ctx) {
-        if (ctx.scene.getRenderMode() == Scene.RenderMode.COMPUTE_EXAMPLE) {
-            computeExamplePass.render(ctx);
+        if (ctx == null || ctx.scene == null) {
+            return;
+        }
+
+        if (ctx.scene.getLights().isEmpty()) {
+            clearDefaultSurface(ctx);
+            ctx.scene.renderCustom(ctx);
             return;
         }
 
         gBufferPass.render(ctx);
         GBuffer gBuffer = gBufferPass.getGBuffer();
 
+        clearDefaultSurface(ctx);
         for (Light light : ctx.scene.getLights()) {
             renderLight(ctx, gBuffer, light);
         }
+
+        ctx.scene.renderCustom(ctx);
+    }
+
+    private void clearDefaultSurface(RenderContext ctx) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, ctx.screenWidth, ctx.screenHeight);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     private void renderLight(RenderContext ctx, GBuffer gBuffer, Light light) {

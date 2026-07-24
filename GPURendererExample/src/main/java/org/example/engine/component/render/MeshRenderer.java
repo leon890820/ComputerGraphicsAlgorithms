@@ -1,8 +1,10 @@
-package org.example.engine.component;
+package org.example.engine.component.render;
 
+import org.example.engine.component.core.Component;
 import org.example.engine.material.Material;
 import org.example.engine.material.MaterialRenderData;
 import org.example.engine.mesh.SubMesh;
+import org.example.engine.render.RenderContext;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -10,7 +12,7 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL33.*;
 
-public class MeshRenderer {
+public class MeshRenderer extends Component {
 
     SubMesh subMesh;
     Material defaultMaterial;
@@ -42,6 +44,7 @@ public class MeshRenderer {
 
     int count = 0;
     boolean initialized = false;
+    private boolean renderedByDefaultPipeline = true;
 
     private static final int VBO_POS     = 0;
     private static final int VBO_NORMAL  = 1;
@@ -80,6 +83,11 @@ public class MeshRenderer {
 
     public String getMaterialName() {
         return subMesh == null ? "null" : subMesh.materialName;
+    }
+
+    public MeshRenderer setRenderedByDefaultPipeline(boolean renderedByDefaultPipeline) {
+        this.renderedByDefaultPipeline = renderedByDefaultPipeline;
+        return this;
     }
 
     public void initialize() {
@@ -223,6 +231,23 @@ public class MeshRenderer {
         render(data, defaultMaterial);
     }
 
+    @Override
+    public void render(RenderContext ctx) {
+        if (gameObject == null) {
+            return;
+        }
+
+        render(gameObject.createMaterialRenderData(ctx, this));
+    }
+
+    public void render(RenderContext ctx, Material overrideMaterial) {
+        if (gameObject == null) {
+            return;
+        }
+
+        render(gameObject.createMaterialRenderData(ctx, this), overrideMaterial);
+    }
+
     public void render(MaterialRenderData data, Material overrideMaterial) {
         if (!initialized || vao == null) return;
         if (data == null) return;
@@ -245,6 +270,22 @@ public class MeshRenderer {
         debugRender(data, defaultMaterial);
     }
 
+    public void debugRender(RenderContext ctx) {
+        if (gameObject == null) {
+            return;
+        }
+
+        debugRender(gameObject.createMaterialRenderData(ctx, this));
+    }
+
+    public void debugRender(RenderContext ctx, Material overrideMaterial) {
+        if (gameObject == null) {
+            return;
+        }
+
+        debugRender(gameObject.createMaterialRenderData(ctx, this), overrideMaterial);
+    }
+
     public void debugRender(MaterialRenderData data, Material overrideMaterial) {
         if (!initialized || vao == null) return;
         if (data == null) return;
@@ -263,6 +304,12 @@ public class MeshRenderer {
         useMat.unbind();
     }
 
+    @Override
+    public boolean isRenderedByDefaultPipeline() {
+        return renderedByDefaultPipeline;
+    }
+
+    @Override
     public void dispose() {
         if (vbo != null) {
             glDeleteBuffers(vbo);

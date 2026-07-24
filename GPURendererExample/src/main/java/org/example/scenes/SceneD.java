@@ -1,5 +1,7 @@
 package org.example.scenes;
 
+import org.example.engine.component.render.ComputeExampleDisplay;
+import org.example.engine.gameobject.EmptyObject;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
@@ -12,7 +14,9 @@ public class SceneD implements IScene {
 
         Scene scene = new Scene();
         scene.setCamera(camera);
-        scene.setRenderMode(Scene.RenderMode.COMPUTE_EXAMPLE);
+        EmptyObject display = new EmptyObject();
+        display.addComponent(new ComputeExampleDisplay(screenWidth, screenHeight));
+        scene.addObject(display);
         return scene;
     }
 
