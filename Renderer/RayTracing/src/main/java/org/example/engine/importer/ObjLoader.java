@@ -283,14 +283,15 @@ public class ObjLoader {
 
             if (sub == null || m == null) continue;
 
-            if (m.mapKa != null && m.mapKa.trim().length() > 0) {
-                Texture tex = loadTextureByRelativePath(m.mapKa);
+            String diffuseMap = m.mapKd != null && m.mapKd.trim().length() > 0 ? m.mapKd : m.mapKa;
+            if (diffuseMap != null && diffuseMap.trim().length() > 0) {
+                Texture tex = loadTextureByRelativePath(diffuseMap);
                 sub.textureKa = tex;
 
                 if (tex != null) {
-                    System.out.println("[ObjLoader] assigned map_Ka texture to submesh: material = " + name + ", file = " + m.mapKa);
+                    System.out.println("[ObjLoader] assigned diffuse texture to submesh: material = " + name + ", file = " + diffuseMap);
                 } else {
-                    System.out.println("[ObjLoader] failed assigning map_Ka texture to submesh: material = " + name + ", file = " + m.mapKa);
+                    System.out.println("[ObjLoader] failed assigning diffuse texture to submesh: material = " + name + ", file = " + diffuseMap);
                 }
             }
         }

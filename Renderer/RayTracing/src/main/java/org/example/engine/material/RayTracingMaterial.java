@@ -6,12 +6,17 @@ import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
 import org.example.engine.raytracing.RayTracingSceneBuffers;
 
+import java.util.Collections;
+import java.util.List;
+
 public class RayTracingMaterial extends Material {
+    private static final int MAX_DIFFUSE_TEXTURES = 31;
     private ComputeBuffer triangleBuffer;
     private ComputeBuffer sphereBuffer;
     private ComputeBuffer nodeBuffer;
     private ComputeBuffer cornellBoxBuffer;
     private ComputeBuffer materialBuffer;
+    private List<Texture> diffuseTextures = Collections.emptyList();
     private Texture lastFrame;
     private Vector3 cameraPosition = new Vector3(0.0f);
     private Matrix4 inverseProjection = Matrix4.Identity();
@@ -46,6 +51,7 @@ public class RayTracingMaterial extends Material {
             cornellTriangleCount = 0;
             materialBuffer = null;
             materialCount = 0;
+            diffuseTextures = Collections.emptyList();
             return this;
         }
 
@@ -58,6 +64,7 @@ public class RayTracingMaterial extends Material {
         cornellTriangleCount = buffers.cornellTriangleCount;
         materialBuffer = buffers.materialBuffer;
         materialCount = buffers.materialCount;
+        diffuseTextures = buffers.diffuseTextures == null ? Collections.emptyList() : buffers.diffuseTextures;
         return this;
     }
 
@@ -125,10 +132,26 @@ public class RayTracingMaterial extends Material {
         setIntToUniform("maxBounces", maxBounces);
         setIntToUniform("dark", darkBackground ? 1 : 0);
         setTexture("lastFrame", lastFrame, 0);
+        bindDiffuseTextures();
     }
 
     @Override
     public void cleanup() {
         unbindTexture(0);
+        int count = Math.min(diffuseTextures.size(), MAX_DIFFUSE_TEXTURES);
+        for (int i = 0; i < count; i++) {
+            unbindTexture(i + 1);
+        }
+    }
+
+    private void bindDiffuseTextures() {
+        int count = Math.min(diffuseTextures.size(), MAX_DIFFUSE_TEXTURES);
+        setIntToUniform("diffuseTextureCount", count);
+        for (int i = 0; i < count; i++) {
+            Texture texture = diffuseTextures.get(i);
+            if (texture != null && texture.isUploaded()) {
+                setTexture("diffuseTextures[" + i + "]", texture, i + 1);
+            }
+        }
     }
 }

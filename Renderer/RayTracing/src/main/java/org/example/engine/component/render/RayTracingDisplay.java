@@ -94,7 +94,7 @@ public class RayTracingDisplay extends Component {
                 .setLastFrame(readBuffer.getColorTexture(0))
                 .setCamera(ctx.camera.transform.position, ctx.camera.inverseProjection(), ctx.camera.localToWorld())
                 .setAccumulationBias(frameIndex)
-                .setDarkBackground(false);
+                .setDarkBackground(true);
 
         for (MeshRenderer renderer : screenQuad.getMeshRenderers()) {
             renderer.render(ctx, rayTracingMaterial);

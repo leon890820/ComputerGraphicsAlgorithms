@@ -1,6 +1,7 @@
 package org.example.engine.raytracing;
 
 import org.example.engine.gl.ComputeBuffer;
+import org.example.engine.gl.Texture;
 import org.example.engine.importer.DefaultMeshAssetLoader;
 import org.example.engine.math.Matrix4;
 import org.example.engine.math.Vector3;
@@ -9,9 +10,11 @@ import org.example.engine.mesh.SubMesh;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 
 public class RayTracingSceneBuilder {
+    private static final int MAX_DIFFUSE_TEXTURES = 31;
     private static final float DEFAULT_MODEL_TARGET_SIZE = 2.2f;
     private static final int DEFAULT_BVH_DEPTH = 48;
     private static final int DRAGON_MATERIAL_INDEX = 0;
@@ -119,6 +122,8 @@ public class RayTracingSceneBuilder {
     public RayTracingSceneBuffers buildStaticScene(List<RayTracingMeshInstance> instances) {
         ArrayList<RayTracingMaterialData> materials = new ArrayList<>();
         ArrayList<RayTracingTriangle> sceneTriangles = new ArrayList<>();
+        ArrayList<Texture> diffuseTextures = new ArrayList<>();
+        IdentityHashMap<Texture, Integer> diffuseTextureIndices = new IdentityHashMap<>();
         ArrayList<RayTracingSphereData> sphereLights = createDefaultSphereLights();
         StringBuilder cacheKey = new StringBuilder("static-bvh=sah-stack-safe-v2")
                 .append("|depth=").append(bvhDepth)
@@ -131,19 +136,24 @@ public class RayTracingSceneBuilder {
                 continue;
             }
 
-            ArrayList<RayTracingTriangle> meshTriangles = collectMeshTriangles(instance.meshPath);
+            Mesh mesh = new DefaultMeshAssetLoader().load(instance.meshPath).getMesh();
+            ArrayList<RayTracingTriangle> meshTriangles = collectMeshTriangles(
+                    mesh,
+                    instance.material,
+                    materials,
+                    diffuseTextures,
+                    diffuseTextureIndices
+            );
             if (meshTriangles.isEmpty()) {
                 continue;
             }
 
-            int materialIndex = materials.size();
-            materials.add(instance.material);
-            appendInstanceCacheKey(cacheKey, instance, materialIndex);
+            appendInstanceCacheKey(cacheKey, instance, materials.size());
             if (instance.normalizeToTargetSize) {
-                meshTriangles = normalizeTriangles(meshTriangles, materialIndex, instance.targetSize);
+                meshTriangles = normalizeTriangles(meshTriangles, instance.targetSize);
             }
 
-            sceneTriangles.addAll(transformTriangles(meshTriangles, instance.transform, materialIndex));
+            sceneTriangles.addAll(transformTriangles(meshTriangles, instance.transform));
             System.out.println("[RayTracingSceneBuilder] loaded " + meshTriangles.size() + " triangles from " + instance.meshPath);
         }
 
@@ -186,7 +196,8 @@ public class RayTracingSceneBuilder {
                     bufferPacker.createDummyFullTriangleBuffer(),
                     0,
                     bufferPacker.createMaterialBuffer(materials),
-                    materials.size()
+                    materials.size(),
+                    diffuseTextures
             );
         }
 
@@ -210,7 +221,8 @@ public class RayTracingSceneBuilder {
                 bufferPacker.createDummyFullTriangleBuffer(),
                 0,
                 bufferPacker.createMaterialBuffer(materials),
-                materials.size()
+                materials.size(),
+                diffuseTextures
         );
     }
 
@@ -246,6 +258,71 @@ public class RayTracingSceneBuilder {
         return triangles;
     }
 
+    private ArrayList<RayTracingTriangle> collectMeshTriangles(
+            Mesh mesh,
+            RayTracingMaterialData baseMaterial,
+            ArrayList<RayTracingMaterialData> materials,
+            ArrayList<Texture> diffuseTextures,
+            IdentityHashMap<Texture, Integer> diffuseTextureIndices
+    ) {
+        ArrayList<RayTracingTriangle> triangles = new ArrayList<>();
+        if (mesh == null) {
+            return triangles;
+        }
+
+        for (SubMesh subMesh : mesh.getAllSubMeshes()) {
+            float[] positions = subMesh.positions;
+            float[] uvs = subMesh.uvs;
+            int[] indices = subMesh.indices;
+            if (positions == null || indices == null) {
+                continue;
+            }
+
+            int textureIndex = registerDiffuseTexture(subMesh.textureKa, diffuseTextures, diffuseTextureIndices);
+            int materialIndex = materials.size();
+            materials.add(baseMaterial.withTextureIndex(textureIndex));
+
+            for (int i = 0; i + 2 < indices.length; i += 3) {
+                triangles.add(new RayTracingTriangle(
+                        readPosition(positions, indices[i]),
+                        readPosition(positions, indices[i + 1]),
+                        readPosition(positions, indices[i + 2]),
+                        readUv(uvs, indices[i]),
+                        readUv(uvs, indices[i + 1]),
+                        readUv(uvs, indices[i + 2]),
+                        materialIndex
+                ));
+            }
+        }
+
+        return triangles;
+    }
+
+    private int registerDiffuseTexture(
+            Texture texture,
+            ArrayList<Texture> diffuseTextures,
+            IdentityHashMap<Texture, Integer> diffuseTextureIndices
+    ) {
+        if (texture == null || !texture.isUploaded()) {
+            return -1;
+        }
+
+        Integer existing = diffuseTextureIndices.get(texture);
+        if (existing != null) {
+            return existing;
+        }
+
+        if (diffuseTextures.size() >= MAX_DIFFUSE_TEXTURES) {
+            System.out.println("[RayTracingSceneBuilder] diffuse texture limit reached; fallback to material albedo");
+            return -1;
+        }
+
+        int index = diffuseTextures.size();
+        diffuseTextures.add(texture);
+        diffuseTextureIndices.put(texture, index);
+        return index;
+    }
+
     private Vector3 readPosition(float[] positions, int index) {
         int base = index * 3;
         if (base < 0 || base + 2 >= positions.length) {
@@ -254,11 +331,28 @@ public class RayTracingSceneBuilder {
         return new Vector3(positions[base], positions[base + 1], positions[base + 2]);
     }
 
+    private Vector3 readUv(float[] uvs, int index) {
+        int base = index * 2;
+        if (uvs == null || base < 0 || base + 1 >= uvs.length) {
+            return new Vector3(0.0f);
+        }
+        return new Vector3(uvs[base], uvs[base + 1], 0.0f);
+    }
+
     private ArrayList<RayTracingTriangle> normalizeTriangles(List<RayTracingTriangle> triangles, int materialIndex) {
         return normalizeTriangles(triangles, materialIndex, modelTargetSize);
     }
 
     private ArrayList<RayTracingTriangle> normalizeTriangles(List<RayTracingTriangle> triangles, int materialIndex, float targetSize) {
+        ArrayList<RayTracingTriangle> normalized = normalizeTriangles(triangles, targetSize);
+        ArrayList<RayTracingTriangle> remapped = new ArrayList<>(normalized.size());
+        for (RayTracingTriangle triangle : normalized) {
+            remapped.add(triangle.withMaterialIndex(materialIndex));
+        }
+        return remapped;
+    }
+
+    private ArrayList<RayTracingTriangle> normalizeTriangles(List<RayTracingTriangle> triangles, float targetSize) {
         RayTracingBounds bounds = calculateBounds(triangles);
         Vector3 boundsSize = bounds.size();
         float maxSize = Math.max(boundsSize.x, Math.max(boundsSize.y, boundsSize.z));
@@ -271,7 +365,10 @@ public class RayTracingSceneBuilder {
                     triangle.p0.sub(center).mult(scale),
                     triangle.p1.sub(center).mult(scale),
                     triangle.p2.sub(center).mult(scale),
-                    materialIndex
+                    triangle.uv0,
+                    triangle.uv1,
+                    triangle.uv2,
+                    triangle.materialIndex
             ));
         }
         return normalized;
@@ -282,6 +379,18 @@ public class RayTracingSceneBuilder {
             Matrix4 transform,
             int materialIndex
     ) {
+        ArrayList<RayTracingTriangle> transformed = transformTriangles(triangles, transform);
+        ArrayList<RayTracingTriangle> remapped = new ArrayList<>(transformed.size());
+        for (RayTracingTriangle triangle : transformed) {
+            remapped.add(triangle.withMaterialIndex(materialIndex));
+        }
+        return remapped;
+    }
+
+    private ArrayList<RayTracingTriangle> transformTriangles(
+            List<RayTracingTriangle> triangles,
+            Matrix4 transform
+    ) {
         Matrix4 safeTransform = transform == null ? Matrix4.Identity() : transform;
         ArrayList<RayTracingTriangle> transformed = new ArrayList<>(triangles.size());
         for (RayTracingTriangle triangle : triangles) {
@@ -289,7 +398,10 @@ public class RayTracingSceneBuilder {
                     safeTransform.transformPoint(triangle.p0),
                     safeTransform.transformPoint(triangle.p1),
                     safeTransform.transformPoint(triangle.p2),
-                    materialIndex
+                    triangle.uv0,
+                    triangle.uv1,
+                    triangle.uv2,
+                    triangle.materialIndex
             ));
         }
         return transformed;
@@ -329,9 +441,9 @@ public class RayTracingSceneBuilder {
 
     private void addMirrorCheckerFloor(ArrayList<RayTracingTriangle> sceneTriangles, ArrayList<RayTracingMaterialData> materials) {
         int whiteMaterialIndex = materials.size();
-        materials.add(RayTracingMaterialData.metal(new Vector3(0.88f, 0.88f, 0.88f), 0.04f));
+        materials.add(RayTracingMaterialData.metal(new Vector3(0.98f, 0.98f, 0.98f), 0.04f));
         int blackMaterialIndex = materials.size();
-        materials.add(RayTracingMaterialData.metal(new Vector3(0.42f, 0.42f, 0.42f), 0.08f));
+        materials.add(RayTracingMaterialData.metal(new Vector3(0.42f, 0.42f, 0.42f), 0.04f));
 
         float minX = -MIRROR_FLOOR_HALF_SIZE_X;
         float minZ = -MIRROR_FLOOR_HALF_SIZE_Z;
@@ -386,7 +498,7 @@ public class RayTracingSceneBuilder {
         lights.add(new RayTracingSphereData(
                 position,
                 radius,
-                RayTracingMaterialData.emissive(new Vector3(7.0f, 5.7f, 3.8f))
+                RayTracingMaterialData.emissive(new Vector3(7.0f * 3f, 5.7f * 3f, 3.8f * 3f))
         ));
     }
 

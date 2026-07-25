@@ -11,7 +11,7 @@ import static org.lwjgl.opengl.GL33.GL_STATIC_DRAW;
 
 public class RayTracingBufferPacker {
     public ComputeBuffer createMeshTriangleBuffer(List<RayTracingTriangle> triangles) {
-        FloatBuffer data = MemoryUtil.memAllocFloat(triangles.size() * 12);
+        FloatBuffer data = MemoryUtil.memAllocFloat(triangles.size() * 20);
         for (RayTracingTriangle triangle : triangles) {
             putMeshTriangle(data, triangle);
         }
@@ -99,7 +99,7 @@ public class RayTracingBufferPacker {
     }
 
     public ComputeBuffer createDummyMeshTriangleBuffer() {
-        FloatBuffer data = MemoryUtil.memAllocFloat(12);
+        FloatBuffer data = MemoryUtil.memAllocFloat(20);
         putMeshTriangle(data, new RayTracingTriangle(
                 new Vector3(100000.0f, 100000.0f, 100000.0f),
                 new Vector3(100001.0f, 100000.0f, 100000.0f),
@@ -151,6 +151,8 @@ public class RayTracingBufferPacker {
         data.put(triangle.p0.x).put(triangle.p0.y).put(triangle.p0.z).put((float) triangle.materialIndex);
         putPosition(data, triangle.p1);
         putPosition(data, triangle.p2);
+        data.put(triangle.uv0.x).put(triangle.uv0.y).put(triangle.uv1.x).put(triangle.uv1.y);
+        data.put(triangle.uv2.x).put(triangle.uv2.y).put(0.0f).put(0.0f);
     }
 
     private void putPosition(FloatBuffer data, Vector3 position) {
@@ -158,7 +160,7 @@ public class RayTracingBufferPacker {
     }
 
     private void putMaterial(FloatBuffer data, RayTracingMaterialData material) {
-        data.put(material.type).put(0.0f).put(0.0f).put(0.0f);
+        data.put(material.type).put((float) material.textureIndex).put(0.0f).put(0.0f);
         data.put(material.albedo.x).put(material.albedo.y).put(material.albedo.z).put(material.fuzz);
         data.put(material.refractionIndex).put(0.0f).put(0.0f).put(0.0f);
     }

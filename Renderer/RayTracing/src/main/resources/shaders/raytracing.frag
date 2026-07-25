@@ -11,7 +11,8 @@ uniform mat4 camToWorld;
 uniform vec2 resolution;
 uniform float rbias;
 uniform sampler2D lastFrame;
-uniform sampler2D earth;
+uniform sampler2D diffuseTextures[31];
+uniform int diffuseTextureCount;
 uniform bool dark;
 uniform int sphereCount;
 uniform int cornellTriangleCount;
@@ -141,6 +142,8 @@ struct Material{
     // type 0 : lambertian
     // type 1 : metal
     float type;
+    float textureIndex;
+    vec2 padding;
     vec3 albedo;
     float fuzz;
     float refraction_index;
@@ -155,6 +158,8 @@ struct HitRecord{
     float matType;
     float matFuzz;
     float matRefractionIndex;
+    float matTextureIndex;
+    vec2 uv;
     bool front_face;
 };
 
@@ -169,6 +174,8 @@ struct MeshTriangle{
     vec4 T0AndMaterialIndex;
     vec4 T1;
     vec4 T2;
+    vec4 uv01;
+    vec4 uv2;
 };
 
 struct Sphere{
@@ -234,6 +241,43 @@ float nodeChildBIndex(Node node) {
 
 vec3 rayAt(Ray ray, float t) {
     return ray.origin + ray.dir * t;
+}
+
+vec3 sampleDiffuseTexture(float textureIndex, vec2 uv, vec3 fallbackColor) {
+    if(textureIndex < 0.0) return fallbackColor;
+    int index = int(textureIndex + 0.5);
+    if(index >= diffuseTextureCount) return fallbackColor;
+    if(index == 0) return texture(diffuseTextures[0], uv).rgb;
+    if(index == 1) return texture(diffuseTextures[1], uv).rgb;
+    if(index == 2) return texture(diffuseTextures[2], uv).rgb;
+    if(index == 3) return texture(diffuseTextures[3], uv).rgb;
+    if(index == 4) return texture(diffuseTextures[4], uv).rgb;
+    if(index == 5) return texture(diffuseTextures[5], uv).rgb;
+    if(index == 6) return texture(diffuseTextures[6], uv).rgb;
+    if(index == 7) return texture(diffuseTextures[7], uv).rgb;
+    if(index == 8) return texture(diffuseTextures[8], uv).rgb;
+    if(index == 9) return texture(diffuseTextures[9], uv).rgb;
+    if(index == 10) return texture(diffuseTextures[10], uv).rgb;
+    if(index == 11) return texture(diffuseTextures[11], uv).rgb;
+    if(index == 12) return texture(diffuseTextures[12], uv).rgb;
+    if(index == 13) return texture(diffuseTextures[13], uv).rgb;
+    if(index == 14) return texture(diffuseTextures[14], uv).rgb;
+    if(index == 15) return texture(diffuseTextures[15], uv).rgb;
+    if(index == 16) return texture(diffuseTextures[16], uv).rgb;
+    if(index == 17) return texture(diffuseTextures[17], uv).rgb;
+    if(index == 18) return texture(diffuseTextures[18], uv).rgb;
+    if(index == 19) return texture(diffuseTextures[19], uv).rgb;
+    if(index == 20) return texture(diffuseTextures[20], uv).rgb;
+    if(index == 21) return texture(diffuseTextures[21], uv).rgb;
+    if(index == 22) return texture(diffuseTextures[22], uv).rgb;
+    if(index == 23) return texture(diffuseTextures[23], uv).rgb;
+    if(index == 24) return texture(diffuseTextures[24], uv).rgb;
+    if(index == 25) return texture(diffuseTextures[25], uv).rgb;
+    if(index == 26) return texture(diffuseTextures[26], uv).rgb;
+    if(index == 27) return texture(diffuseTextures[27], uv).rgb;
+    if(index == 28) return texture(diffuseTextures[28], uv).rgb;
+    if(index == 29) return texture(diffuseTextures[29], uv).rgb;
+    return texture(diffuseTextures[30], uv).rgb;
 }
 
 void setFaceNormal(Ray ray, vec3 outward_normal, inout HitRecord record) {
@@ -325,6 +369,10 @@ bool rayTriangleData(
     vec3 matAlbedo,
     float matFuzz,
     float matRefractionIndex,
+    float matTextureIndex,
+    vec2 uv0,
+    vec2 uv1,
+    vec2 uv2,
     float min_r,
     float max_r,
     inout HitRecord record
@@ -347,12 +395,14 @@ bool rayTriangleData(
     if(b1 < 0.0 || b1 > 1.0 || b2 < 0.0 || b2 > 1.0 || b0 < 0.0 || b0 > 1.0) return false;
     record.pos = rayAt(ray, t);
     record.t = t;
+    record.uv = uv0 * b0 + uv1 * b1 + uv2 * b2;
     vec3 normal = normalize(cross(e1, e2));
     setFaceNormal(ray, normal, record);
     record.matType = matType;
-    record.matAlbedo = matAlbedo;
+    record.matAlbedo = matAlbedo * sampleDiffuseTexture(matTextureIndex, record.uv, vec3(1.0));
     record.matFuzz = matFuzz;
     record.matRefractionIndex = matRefractionIndex;
+    record.matTextureIndex = matTextureIndex;
 
     return true;
 
@@ -368,6 +418,10 @@ bool rayTriangle(Ray ray, Triangle tri,float min_r, float max_r,inout HitRecord 
         tri.mat.albedo,
         tri.mat.fuzz,
         tri.mat.refraction_index,
+        tri.mat.textureIndex,
+        vec2(0.0),
+        vec2(0.0),
+        vec2(0.0),
         min_r,
         max_r,
         record
@@ -386,6 +440,10 @@ bool rayTriangleByIndex(Ray ray, int index, float min_r, float max_r, inout HitR
         mat.albedo,
         mat.fuzz,
         mat.refraction_index,
+        mat.textureIndex,
+        triangle[index].uv01.xy,
+        triangle[index].uv01.zw,
+        triangle[index].uv2.xy,
         min_r,
         max_r,
         record

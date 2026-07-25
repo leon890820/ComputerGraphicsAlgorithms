@@ -7,12 +7,22 @@ public class RayTracingMaterialData {
     public final Vector3 albedo;
     public final float fuzz;
     public final float refractionIndex;
+    public final int textureIndex;
 
     public RayTracingMaterialData(float type, Vector3 albedo, float fuzz, float refractionIndex) {
+        this(type, albedo, fuzz, refractionIndex, -1);
+    }
+
+    public RayTracingMaterialData(float type, Vector3 albedo, float fuzz, float refractionIndex, int textureIndex) {
         this.type = type;
         this.albedo = albedo == null ? new Vector3(0.0f) : albedo;
         this.fuzz = fuzz;
         this.refractionIndex = refractionIndex;
+        this.textureIndex = textureIndex;
+    }
+
+    public RayTracingMaterialData withTextureIndex(int textureIndex) {
+        return new RayTracingMaterialData(type, albedo, fuzz, refractionIndex, textureIndex);
     }
 
     public static RayTracingMaterialData lambertian(Vector3 albedo) {
