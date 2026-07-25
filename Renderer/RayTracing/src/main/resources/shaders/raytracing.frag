@@ -6,6 +6,10 @@ precision mediump float;
 #define PI 3.1415926
 
 uniform vec3 camPos;
+uniform vec3 directionalLightDirection;
+uniform vec3 directionalLightColor;
+uniform float directionalLightIntensity;
+uniform int directionalLightEnabled;
 uniform mat4 invProject;
 uniform mat4 camToWorld;
 uniform vec2 resolution;
@@ -534,95 +538,19 @@ void rayBVHTriangle(Ray ray, float min_r, float max_r,inout HitRecord record){
 
 }
 
-bool rayBVHAnyHit(Ray ray, float min_r, float max_r){
-    const int BVH_STACK_SIZE = 128;
-    int nodeStack[BVH_STACK_SIZE];
-    int stackCount = 0;
-    nodeStack[stackCount++] = 0;
-    vec3 invDir = 1.0 / ray.dir;
-    HitRecord tempRecord;
+vec3 directionLight(HitRecord surface, vec3 dir){
+    float ndotl = max(dot(surface.normal, dir), 0.0);
+    if(ndotl <= 0.0) return vec3(0.0);
 
-    while(stackCount > 0){
-        Node node = nodes[nodeStack[--stackCount]];
-        float boxEnterDistance;
+    HitRecord shadowRecord;
+    shadowRecord.t = 0.0;
+    Ray shadowRay = Ray(surface.pos + surface.normal * 0.003, dir);
+    rayBVHTriangle(shadowRay, 0.001, 1000000.0, shadowRecord);
+    if(shadowRecord.t > 0.0) return vec3(0.0);
 
-        if(rayBoundingBox(ray.origin, invDir, nodeMinB(node), nodeMaxB(node), boxEnterDistance) && boxEnterDistance <= max_r){
-            if(nodeChildAIndex(node) == 0){
-                for(int i = 0; i < int(nodeTriangleSize(node)); i++){
-                    if(rayTriangleByIndex(ray, int(nodeTriangleIndex(node)) + i, min_r, max_r, tempRecord)){
-                        return true;
-                    }
-                }
-            }else{
-                Node childA = nodes[int(nodeChildAIndex(node))];
-                Node childB = nodes[int(nodeChildBIndex(node))];
-                float enterA;
-                float enterB;
-                bool hitA = rayBoundingBox(ray.origin, invDir, nodeMinB(childA), nodeMaxB(childA), enterA) && enterA <= max_r;
-                bool hitB = rayBoundingBox(ray.origin, invDir, nodeMinB(childB), nodeMaxB(childB), enterB) && enterB <= max_r;
-
-                if(hitA && stackCount < BVH_STACK_SIZE){
-                    nodeStack[stackCount++] = int(nodeChildAIndex(node));
-                }
-                if(hitB && stackCount < BVH_STACK_SIZE){
-                    nodeStack[stackCount++] = int(nodeChildBIndex(node));
-                }
-            }
-        }
-    }
-
-    return false;
+    return vec3(0.9, 0.8, 0.4) * ndotl;
 }
 
-bool sceneAnyHit(Ray ray, float min_r, float max_r){
-    HitRecord tempRecord;
-    for(int i = 0; i < sphereCount; i++){
-        if(raySphere(ray, sphere[i], min_r, max_r, tempRecord)){
-            return true;
-        }
-    }
-    for(int i = 0; i < cornellTriangleCount; i++){
-        if(rayCornellTriangleByIndex(ray, i, min_r, max_r, tempRecord)){
-            return true;
-        }
-    }
-    return rayBVHAnyHit(ray, min_r, max_r);
-}
-
-vec3 sphereLightContribution(HitRecord record, int bounce){
-    if(record.matType >= 3.5){
-        return vec3(0.0);
-    }
-
-    if(sphereCount <= 0){
-        return vec3(0.0);
-    }
-
-    float pixelIndex = floor(texcoord.x * resolution.x) + floor(texcoord.y * resolution.y) * resolution.x;
-    int lightIndex = int(mod(pixelIndex + floor(rbias) + float(bounce * 7), float(sphereCount)));
-    if(sphere[lightIndex].mat.type < 3.5){
-        return vec3(0.0);
-    }
-
-    vec3 toLight = sphere[lightIndex].center - record.pos;
-    float distSq = max(dot(toLight, toLight), 0.0001);
-    float dist = sqrt(distSq);
-    vec3 lightDir = toLight / dist;
-    float ndotl = max(dot(record.normal, lightDir), 0.0);
-    if(ndotl <= 0.0){
-        return vec3(0.0);
-    }
-
-    Ray shadowRay = Ray(record.pos + record.normal * 0.003, lightDir);
-    float shadowMaxDistance = max(dist - sphere[lightIndex].radius - 0.01, 0.0);
-    if(shadowMaxDistance > 0.0 && sceneAnyHit(shadowRay, 0.001, shadowMaxDistance)){
-        return vec3(0.0);
-    }
-
-    float radius = sphere[lightIndex].radius;
-    float attenuation = (radius * radius) / distSq;
-    return record.matAlbedo * sphere[lightIndex].mat.albedo * attenuation * ndotl * float(sphereCount);
-}
 
 vec3 rayColor(Ray ray, inout HitRecord record){
     vec3 color = vec3(1.0);
@@ -639,18 +567,20 @@ vec3 rayColor(Ray ray, inout HitRecord record){
                 min_drecord = record.t;
             }
         }
-        for(int i = 0; i < cornellTriangleCount; i++){
-            if(rayCornellTriangleByIndex(ray, i, 0.001, min_drecord, record)){
-                min_drecord = record.t;
-            }
-        }
+//        for(int i = 0; i < cornellTriangleCount; i++){
+//            if(rayCornellTriangleByIndex(ray, i, 0.001, min_drecord, record)){
+//                min_drecord = record.t;
+//            }
+//        }
         rayBVHTriangle(ray, 0.001, min_drecord, record);
 
         if(record.t > 0) {
-            vec3 directLight = sphereLightContribution(record, k);
-            color += color * directLight;
             vec3 attenuation;
+            vec3 dir = normalize(vec3(0.05, 1.0, 0.15));
+            vec3 directionColor = directionLight(record, dir);
+
             if(scatter(ray, record, attenuation)){
+                color += color * record.matAlbedo * directionColor * 8.0;
                 color *= attenuation;
             }else{
                 color *= attenuation;

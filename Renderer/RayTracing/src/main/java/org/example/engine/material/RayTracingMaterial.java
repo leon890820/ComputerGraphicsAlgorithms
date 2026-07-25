@@ -21,6 +21,10 @@ public class RayTracingMaterial extends Material {
     private Vector3 cameraPosition = new Vector3(0.0f);
     private Matrix4 inverseProjection = Matrix4.Identity();
     private Matrix4 cameraToWorld = Matrix4.Identity();
+    private Vector3 directionalLightDirection = new Vector3(0.35f, -0.85f, 0.4f);
+    private Vector3 directionalLightColor = new Vector3(1.0f, 0.95f, 0.85f);
+    private float directionalLightIntensity = 8.0f;
+    private boolean directionalLightEnabled = true;
     private int triangleCount;
     private int sphereCount;
     private int cornellTriangleCount;
@@ -86,6 +90,23 @@ public class RayTracingMaterial extends Material {
         return this;
     }
 
+    public RayTracingMaterial setDirectionalLight(Vector3 direction, Vector3 color, float intensity) {
+        if (direction != null) {
+            this.directionalLightDirection = direction;
+        }
+        if (color != null) {
+            this.directionalLightColor = color;
+        }
+        this.directionalLightIntensity = Math.max(0.0f, intensity);
+        this.directionalLightEnabled = this.directionalLightIntensity > 0.0f;
+        return this;
+    }
+
+    public RayTracingMaterial setDirectionalLightEnabled(boolean enabled) {
+        this.directionalLightEnabled = enabled;
+        return this;
+    }
+
     public RayTracingMaterial setResolution(int width, int height) {
         screenWidth = Math.max(1, width);
         screenHeight = Math.max(1, height);
@@ -123,6 +144,10 @@ public class RayTracingMaterial extends Material {
         setVector3ToUniform("camPos", cameraPosition);
         setMatrix4ToUniform("invProject", inverseProjection);
         setMatrix4ToUniform("camToWorld", cameraToWorld);
+        setVector3ToUniform("directionalLightDirection", directionalLightDirection);
+        setVector3ToUniform("directionalLightColor", directionalLightColor);
+        setFloatToUniform("directionalLightIntensity", directionalLightIntensity);
+        setIntToUniform("directionalLightEnabled", directionalLightEnabled ? 1 : 0);
         setVector2ToUniform("resolution", screenWidth, screenHeight);
         setFloatToUniform("rbias", accumulationBias);
         setIntToUniform("numTriangles", triangleCount);

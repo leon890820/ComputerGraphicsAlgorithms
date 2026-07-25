@@ -38,7 +38,7 @@ public class SceneD implements IScene {
         models.add(new RayTracingMeshInstance(
                 SPONZA_MESH_PATH,
                 Matrix4.Trans(new Vector3(0.0f, 0.0f, 0.0f)).mult(Matrix4.Scale(2.0f)),
-                RayTracingMaterialData.lambertian(new Vector3(1.0f))
+                RayTracingMaterialData.metal(new Vector3(1.0f),0.8f)
         ));
         models.add(RayTracingMeshInstance.normalized(
                 DRAGON_MESH_PATH,
@@ -63,24 +63,24 @@ public class SceneD implements IScene {
                 RayTracingMaterialData.lambertian(new Vector3(0.3f, 0.75f, 0.45f)),
                 DRAGON_TARGET_SIZE
         ));
-
-        models.add(RayTracingMeshInstance.normalized(
-                BUDDHA_MESH_PATH,
-                Matrix4.Trans(new Vector3(0.3f, -4.3f, 1.2f))
-                        .mult(Matrix4.RotY(3.14f))
-                        .mult(Matrix4.Scale(0.2f)),
-                RayTracingMaterialData.metal(new Vector3(0.6f, 0.8f, 0.6f), 0.18f),
-                DRAGON_TARGET_SIZE
-        ));
-
-        models.add(RayTracingMeshInstance.normalized(
-                BUDDHA_MESH_PATH,
-                Matrix4.Trans(new Vector3(0.0f, -4.3f, 1.2f))
-                        .mult(Matrix4.RotY(3.14f))
-                        .mult(Matrix4.Scale(0.2f)),
-                RayTracingMaterialData.lambertian(new Vector3(0.7f, 0.2f, 0.3f)),
-                DRAGON_TARGET_SIZE
-        ));
+//
+//        models.add(RayTracingMeshInstance.normalized(
+//                BUDDHA_MESH_PATH,
+//                Matrix4.Trans(new Vector3(0.3f, -4.3f, 1.2f))
+//                        .mult(Matrix4.RotY(3.14f))
+//                        .mult(Matrix4.Scale(0.2f)),
+//                RayTracingMaterialData.metal(new Vector3(0.6f, 0.8f, 0.6f), 0.18f),
+//                DRAGON_TARGET_SIZE
+//        ));
+//
+//        models.add(RayTracingMeshInstance.normalized(
+//                BUDDHA_MESH_PATH,
+//                Matrix4.Trans(new Vector3(0.0f, -4.3f, 1.2f))
+//                        .mult(Matrix4.RotY(3.14f))
+//                        .mult(Matrix4.Scale(0.2f)),
+//                RayTracingMaterialData.lambertian(new Vector3(0.7f, 0.2f, 0.3f)),
+//                DRAGON_TARGET_SIZE
+//        ));
 
 
         return models;
