@@ -111,6 +111,20 @@ vec3 randomOnHemisphere(vec3 co,vec3 noraml){
     else return -rd;
 }
 
+vec3 cosineWeightedHemisphere(vec3 co, vec3 normal){
+    float seed = dot(co, vec3(12.9898, 78.233, 37.719)) + rbias * 0.173;
+    vec2 xi = Rand2(seed);
+    float r = sqrt(xi.x);
+    float phi = 2.0 * PI * xi.y;
+
+    vec3 w = normalize(normal);
+    vec3 helper = abs(w.x) > 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 u = normalize(cross(helper, w));
+    vec3 v = cross(w, u);
+
+    return normalize(u * (r * cos(phi)) + v * (r * sin(phi)) + w * sqrt(max(0.0, 1.0 - xi.x)));
+}
+
 
 
 
@@ -323,9 +337,9 @@ float reflectance(float cosine, float refraction_index) {
 
 bool scatter(inout Ray ray, inout HitRecord record, out vec3 attenuation){
     if(record.matType < 0.5){
-        vec3 dir = randomOnHemisphere( record.pos * 6.16541 + record.normal * 0.3245 * (rbias + 1.51), record.normal);
+        vec3 dir = cosineWeightedHemisphere(record.pos * 6.16541 + record.normal * 0.3245, record.normal);
         attenuation = record.matAlbedo;
-        ray = Ray(record.pos , dir);
+        ray = Ray(record.pos + record.normal * 0.003, dir);
         return true;
     }else if(record.matType < 1.5){
         vec3 dir = reflect(ray.dir , record.normal) + randomValueNormalDistribution(record.pos * 6.16541 + record.normal * 0.3245 * (rbias + 1.51)) * record.matFuzz;

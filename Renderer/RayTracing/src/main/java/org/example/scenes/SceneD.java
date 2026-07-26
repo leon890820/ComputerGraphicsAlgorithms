@@ -38,7 +38,7 @@ public class SceneD implements IScene {
         models.add(new RayTracingMeshInstance(
                 SPONZA_MESH_PATH,
                 Matrix4.Trans(new Vector3(0.0f, 0.0f, 0.0f)).mult(Matrix4.Scale(2.0f)),
-                RayTracingMaterialData.metal(new Vector3(1.0f),0.8f)
+                RayTracingMaterialData.metal(new Vector3(1.0f),1.0f)
         ));
         models.add(RayTracingMeshInstance.normalized(
                 DRAGON_MESH_PATH,
