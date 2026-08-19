@@ -270,7 +270,7 @@ public class Texture {
                 image
         );
 
-        applySampling(GL_LINEAR);
+        applySampling(GL_NEAREST);
         applyWrap(GL_REPEAT);
 
         glBindTexture(GL_TEXTURE_2D, 0);

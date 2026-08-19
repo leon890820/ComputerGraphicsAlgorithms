@@ -2,7 +2,9 @@ package org.example.engine.render.pass;
 
 import org.example.engine.gl.FBO;
 import org.example.engine.component.render.MeshRenderer;
+import org.example.engine.gameobject.GameObject;
 import org.example.engine.light.Light;
+import org.example.engine.portal.Portal;
 import org.example.engine.render.GBuffer;
 import org.example.engine.render.RenderContext;
 
@@ -38,7 +40,10 @@ public class GBufferPass extends RenderPass {
         ctx.activeLight = primaryLight;
         try {
             for (MeshRenderer renderer : ctx.scene.getComponents(MeshRenderer.class)) {
-                if (renderer.isEnabled() && renderer.isRenderedByDefaultPipeline()) {
+                GameObject object = renderer.getGameObject();
+                if (renderer.isEnabled()
+                        && renderer.isRenderedByDefaultPipeline()
+                        && !(object instanceof Portal)) {
                     renderer.render(ctx);
                 }
             }

@@ -1,7 +1,9 @@
 package org.example;
 
 import org.example.engine.core.Window;
+import org.example.engine.component.player.FirstPersonPlayerController;
 import org.example.engine.math.*;
+import org.example.engine.player.PlayerInput;
 import org.example.engine.render.*;
 import org.example.engine.scene.*;
 import org.example.scenes.*;
@@ -14,10 +16,9 @@ public class Main {
     private static final int WIDTH = 1024;
     private static final int HEIGHT = 1024;
 
-    private static final float GH_MOUSE_SENSITIVITY = 0.005f;
     private static final float MOUSE_DEAD_ZONE = 2;
 
-    private final boolean[] key_input = new boolean[4];
+    private final PlayerInput playerInput = new PlayerInput();
 
     private boolean mouseInitialized = false;
 
@@ -28,11 +29,12 @@ public class Main {
 
     private Window window;
     private Camera main_camera;
+    private FirstPersonPlayerController playerController;
     private Scene scene;
     private Renderer renderer;
     private RenderContext ctx;
     private IScene currentScene;
-    private SceneType currentSceneType = SceneType.D;
+    private SceneType currentSceneType = SceneType.A;
 
     private float a = 0;
     private double lastFrameTime;
@@ -66,7 +68,7 @@ public class Main {
     }
 
     private void setup() {
-        window = new Window(WIDTH, HEIGHT, "GPU Renderer - SceneD Compute Example");
+        window = new Window(WIDTH, HEIGHT, "GPU Renderer - NonEuclidean Level1");
         window.create();
         lastFrameTime = glfwGetTime();
 
@@ -74,9 +76,11 @@ public class Main {
 
         main_camera = new Camera();
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
+        playerController = new FirstPersonPlayerController(playerInput);
+        main_camera.addComponent(playerController);
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.C);
+        setScene(SceneType.A);
     }
 
     private void draw() {
@@ -84,7 +88,10 @@ public class Main {
         float deltaTime = (float) (now - lastFrameTime);
         lastFrameTime = now;
 
-        move(window);
+        updatePlayerInput(window);
+        main_camera.updateComponents(deltaTime);
+        main_camera.update();
+        playerInput.endFrame();
 
         scene.update(deltaTime);
         currentScene.update(a);
@@ -106,19 +113,23 @@ public class Main {
             boolean pressed = action != GLFW_RELEASE;
 
             if (key == GLFW_KEY_W) {
-                key_input[0] = pressed;
+                playerInput.forward = pressed;
             }
 
             if (key == GLFW_KEY_A) {
-                key_input[1] = pressed;
+                playerInput.left = pressed;
             }
 
             if (key == GLFW_KEY_S) {
-                key_input[2] = pressed;
+                playerInput.backward = pressed;
             }
 
             if (key == GLFW_KEY_D) {
-                key_input[3] = pressed;
+                playerInput.right = pressed;
+            }
+
+            if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+                playerInput.sprint = pressed;
             }
 
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -157,13 +168,13 @@ public class Main {
         });
     }
 
-    private void move(Window window) {
+    private void updatePlayerInput(Window window) {
         long handle = window.getHandle();
 
-        boolean rightMousePressed =
+        playerInput.lookActive =
                 glfwGetMouseButton(handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
-        if (rightMousePressed) {
+        if (playerInput.lookActive) {
             float rawDx = (float) mouseDeltaX;
             float rawDy = (float) mouseDeltaY;
 
@@ -175,36 +186,11 @@ public class Main {
                 rawDy = 0.0f;
             }
 
-            float dx = rawDx * GH_MOUSE_SENSITIVITY;
-            float dy = rawDy * GH_MOUSE_SENSITIVITY;
-
-            Vector3 rot = main_camera.transform.eular;
-            main_camera.setEular(rot.x + dy, rot.y + dx, 0.0f);
+            playerInput.mouseDeltaX = rawDx;
+            playerInput.mouseDeltaY = rawDy;
         }
         mouseDeltaX = 0.0;
         mouseDeltaY = 0.0;
-
-        Matrix4 camMat = main_camera.localToWorld();
-
-        Vector3 forward =
-                camMat.transformDirection(new Vector3(0, 0, -1)).unit_vector();
-
-        Vector3 right =
-                camMat.transformDirection(new Vector3(1, 0, 0)).unit_vector();
-
-        float walkSpeed = currentScene.getWalkSpeed();
-
-        float wx = key_input[3] ? walkSpeed :
-                key_input[1] ? -walkSpeed : 0.0f;
-
-        float wz = key_input[0] ? walkSpeed :
-                key_input[2] ? -walkSpeed : 0.0f;
-
-        Vector3 mv = forward.mult(wz).add(right.mult(wx));
-        Vector3 pos = main_camera.transform.position.add(mv);
-
-        main_camera.setPosition(pos);
-        main_camera.update();
     }
 
     private void setScene(SceneType sceneType) {
@@ -225,6 +211,10 @@ public class Main {
         }
 
         scene = currentScene.load(main_camera, WIDTH, HEIGHT);
+        playerController
+                .resetMotion()
+                .setWalkSpeed(currentScene.getWalkSpeed())
+                .setScene(scene);
         ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
         a = 0.0f;
     }

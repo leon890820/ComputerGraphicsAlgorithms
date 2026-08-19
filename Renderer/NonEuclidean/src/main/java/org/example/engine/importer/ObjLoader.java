@@ -134,6 +134,10 @@ public class ObjLoader {
             idx.v = parseObjIndex(parts[0], sourceVerts.size());
         }
 
+        if (parts.length == 1 && idx.v >= 0 && idx.v < sourceUVs.size()) {
+            idx.vt = idx.v;
+        }
+
         if (parts.length > 1 && parts[1].length() > 0) {
             idx.vt = parseObjIndex(parts[1], sourceUVs.size());
         }

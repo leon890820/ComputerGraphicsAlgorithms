@@ -3,6 +3,7 @@ package org.example.engine.scene;
 import org.example.engine.gameobject.GameObject;
 import org.example.engine.component.core.Component;
 import org.example.engine.light.Light;
+import org.example.engine.portal.Portal;
 import org.example.engine.render.RenderContext;
 import org.example.engine.resource.ResourceDisposalContext;
 
@@ -12,6 +13,7 @@ public class Scene {
 
     ArrayList<GameObject> objects = new ArrayList<>();
     ArrayList<Light> lights = new ArrayList<>();
+    ArrayList<Portal> portals = new ArrayList<>();
 
     Camera camera;
 
@@ -30,6 +32,14 @@ public class Scene {
     public Scene addLight(Light light) {
         if (light != null) {
             lights.add(light);
+        }
+        return this;
+    }
+
+    public Scene addPortal(Portal portal) {
+        if (portal != null) {
+            portals.add(portal);
+            addObject(portal);
         }
         return this;
     }
@@ -90,6 +100,10 @@ public class Scene {
         return lights;
     }
 
+    public ArrayList<Portal> getPortals() {
+        return portals;
+    }
+
     public Camera getCamera() {
         return camera;
     }
@@ -107,6 +121,7 @@ public class Scene {
         disposalContext.disposeAll();
         objects.clear();
         lights.clear();
+        portals.clear();
         camera = null;
     }
 }

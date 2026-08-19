@@ -134,6 +134,45 @@ public class Camera extends Quad {
         return worldView;
     }
 
+    public void copyProjectionAndViewFrom(Camera other) {
+        if (other == null) {
+            return;
+        }
+
+        other.rebuildProjectionIfNeeded();
+        other.rebuildViewIfNeeded();
+
+        wid = other.wid;
+        hei = other.hei;
+        near = other.near;
+        far = other.far;
+
+        projection = copyMatrix(other.projection);
+        worldView = copyMatrix(other.worldView);
+        transform.setPosition(worldView.Inverse().translation());
+
+        projectionDirty = false;
+        viewDirty = false;
+        vpDirty = true;
+    }
+
+    public void setViewMatrix(Matrix4 viewMatrix) {
+        if (viewMatrix == null) {
+            return;
+        }
+
+        worldView = copyMatrix(viewMatrix);
+        transform.setPosition(worldView.Inverse().translation());
+        viewDirty = false;
+        vpDirty = true;
+    }
+
+    private Matrix4 copyMatrix(Matrix4 matrix) {
+        Matrix4 copy = new Matrix4();
+        System.arraycopy(matrix.m, 0, copy.m, 0, matrix.m.length);
+        return copy;
+    }
+
     public void ortho(float left, float right, float bottom, float top, float near, float far) {
         projection.makeZero();
 

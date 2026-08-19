@@ -11,6 +11,7 @@ uniform sampler2D shadowMap;
 
 uniform mat4 lightSpaceMatrix;
 uniform float lightFar;
+uniform int useShadow;
 
 uniform vec3 light_dir;
 uniform vec3 light_pos;
@@ -48,9 +49,8 @@ void main() {
     vec3 worldVertex = texture(worldPos, texcoord).rgb;
     vec3 N = texture(worldNormal, texcoord).rgb;
     vec3 L = normalize(-light_dir);
-    float shadow = ShadowCalculation(worldVertex, N, L);
+    float shadow = useShadow == 1 ? ShadowCalculation(worldVertex, N, L) : 0.0;
     vec3 color = texture_color * (1.0 - shadow) ;
-    vec3 shadow_color = texture(shadowMap, texcoord).rgb;
 
   fragColor = vec4(color , 1.0);
 }

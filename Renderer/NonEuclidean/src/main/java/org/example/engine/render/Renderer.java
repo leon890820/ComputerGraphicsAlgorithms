@@ -17,6 +17,8 @@ public class Renderer {
     private final ScenePass spotScenePass;
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
+    private final SkyPass skyPass;
+    private final PortalPass portalPass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
@@ -26,6 +28,8 @@ public class Renderer {
         spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
+        skyPass = new SkyPass();
+        portalPass = new PortalPass(skyPass);
     }
 
     public void render(RenderContext ctx) {
@@ -35,6 +39,8 @@ public class Renderer {
 
         if (ctx.scene.getLights().isEmpty()) {
             clearDefaultSurface(ctx);
+            skyPass.render(ctx);
+            portalPass.render(ctx);
             ctx.scene.renderCustom(ctx);
             return;
         }
@@ -47,6 +53,8 @@ public class Renderer {
             renderLight(ctx, gBuffer, light);
         }
 
+        skyPass.render(ctx, gBuffer.depth);
+        portalPass.render(ctx);
         ctx.scene.renderCustom(ctx);
     }
 

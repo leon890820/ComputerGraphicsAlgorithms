@@ -22,7 +22,11 @@ public class PointLightMaterial extends LightMaterial{
         setTexture("albedo", albedoTex, 0);
         setTexture("worldNormal", normalTex, 1);
         setTexture("worldPos", positionTex, 2);
-        setCubeTexture("shadowCubeMap", shadowCubeMap, 3);
+        boolean useShadow = shadowCubeMap != null && shadowCubeMap.isUploaded();
+        setIntToUniform("useShadow", useShadow ? 1 : 0);
+        if (useShadow) {
+            setCubeTexture("shadowCubeMap", shadowCubeMap, 3);
+        }
 
         applyLightUniforms(data);
     }

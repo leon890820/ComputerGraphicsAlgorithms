@@ -8,6 +8,7 @@ uniform sampler2D worldPos;
 uniform sampler2D worldNormal;
 
 uniform samplerCube shadowCubeMap;
+uniform int useShadow;
 
 uniform vec3 light_pos;
 uniform vec3 light_color;
@@ -55,7 +56,7 @@ void main() {
     float dist = length(lightVec);
 
     vec3 L = normalize(lightVec);
-    float shadow = ShadowCalculationPoint(worldVertex, N, L);
+    float shadow = useShadow == 1 ? ShadowCalculationPoint(worldVertex, N, L) : 0.0;
 
     vec3 V = normalize(view_pos - worldVertex);
     vec3 H = normalize(L + V);

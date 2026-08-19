@@ -7,7 +7,7 @@ public class LightMaterial extends Material {
     Texture albedoTex = new Texture(1,1);
     Texture normalTex = new Texture(1,1);
     Texture positionTex = new Texture(1,1);
-    Texture depthTex = new Texture(1,1);
+    Texture depthTex;
 
     public LightMaterial(String frag) {
         super(frag);
@@ -40,7 +40,11 @@ public class LightMaterial extends Material {
         setTexture("albedo", albedoTex, 0);
         setTexture("worldNormal", normalTex, 1);
         setTexture("worldPos", positionTex, 2);
-        setTexture("shadowMap", depthTex, 3);
+        boolean useShadow = depthTex != null && depthTex.isUploaded();
+        setIntToUniform("useShadow", useShadow ? 1 : 0);
+        if (useShadow) {
+            setTexture("shadowMap", depthTex, 3);
+        }
 
         applyLightUniforms(data);
 
