@@ -9,6 +9,10 @@ public class PhongMaterial extends Material {
     private static final int MAX_BONES = 100;
 
     Texture texture;
+    private float albedoR = 0.78f;
+    private float albedoG = 0.52f;
+    private float albedoB = 0.82f;
+    private boolean useMaterialTexture = true;
 
     public PhongMaterial(String frag) {
         super(frag);
@@ -23,6 +27,18 @@ public class PhongMaterial extends Material {
         return this;
     }
 
+    public PhongMaterial setAlbedo(float r, float g, float b) {
+        albedoR = r;
+        albedoG = g;
+        albedoB = b;
+        return this;
+    }
+
+    public PhongMaterial setUseMaterialTexture(boolean enable) {
+        useMaterialTexture = enable;
+        return this;
+    }
+
     @Override
     public void run(MaterialRenderData data) {
         if (data == null || data.modelMatrix == null || data.mvpMatrix == null) {
@@ -32,6 +48,9 @@ public class PhongMaterial extends Material {
 
         setMatrix4ToUniform("MVP", data.mvpMatrix);
         setMatrix4ToUniform("modelMatrix", data.modelMatrix);
+        if (data.viewMatrix != null) {
+            setMatrix4ToUniform("viewMatrix", data.viewMatrix);
+        }
 
         boolean useSkinning = data.boneMatrices != null && data.boneMatrices.length > 0;
         setIntToUniform("useSkinning", useSkinning ? 1 : 0);
@@ -48,10 +67,14 @@ public class PhongMaterial extends Material {
             setVector3ToUniform("light_dir", data.lightDirection);
         }
 
-        Texture useTex = texture != null ? texture : data.baseColorTexture;
+        Texture useTex = texture != null
+                ? texture
+                : useMaterialTexture ? data.baseColorTexture : null;
+        boolean useTexture = useTex != null && useTex.isUploaded();
+        setIntToUniform("useTexture", useTexture ? 1 : 0);
+        setVector3ToUniform("albedoColor", albedoR, albedoG, albedoB);
 
-        if (useTex != null && useTex.isUploaded()) {
-
+        if (useTexture) {
             setTexture("tex", useTex, 0);
         }
     }

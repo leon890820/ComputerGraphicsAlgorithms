@@ -14,11 +14,12 @@ public class PointScenePass extends RenderPass {
         pointLightMaterial = new PointLightMaterial("/shaders/pointLight.frag", "/shaders/quad.vert");
     }
 
-    public void render(RenderContext ctx, GBuffer gBuffer, PointLight light, TextureCube shadowDepth) {
+    public void render(RenderContext ctx, GBuffer gBuffer, PointLight light, TextureCube shadowDepth, Texture ssaoTexture) {
         pointLightMaterial
                 .setAlbedoTex(gBuffer.albedo)
                 .setNormalTex(gBuffer.normal)
-                .setPositionTex(gBuffer.position);
+                .setPositionTex(gBuffer.position)
+                .setSSAOTex(ssaoTexture);
         pointLightMaterial.setDepthTex(shadowDepth);
         Light previousLight = ctx.activeLight;
         ctx.activeLight = light;

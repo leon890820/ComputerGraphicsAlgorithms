@@ -3,6 +3,7 @@ package org.example.engine.mesh;
 import org.example.engine.asset.material.MtlMaterial;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -122,6 +123,7 @@ public class Mesh {
         }
 
         float[] normals = new float[vertexCount * 3];
+        HashMap<String, float[]> smoothNormals = new HashMap<>();
 
         for (int i = 0; i + 2 < subMesh.indices.length; i += 3) {
             int i0 = subMesh.indices[i];
@@ -147,13 +149,18 @@ public class Mesh {
             addNormal(normals, i0, nx, ny, nz);
             addNormal(normals, i1, nx, ny, nz);
             addNormal(normals, i2, nx, ny, nz);
+
+            addSmoothNormal(smoothNormals, subMesh.positions, i0, nx, ny, nz);
+            addSmoothNormal(smoothNormals, subMesh.positions, i1, nx, ny, nz);
+            addSmoothNormal(smoothNormals, subMesh.positions, i2, nx, ny, nz);
         }
 
         for (int i = 0; i < vertexCount; i++) {
             int base = i * 3;
-            float x = normals[base];
-            float y = normals[base + 1];
-            float z = normals[base + 2];
+            float[] smooth = smoothNormals.get(positionKey(subMesh.positions, i));
+            float x = smooth != null ? smooth[0] : normals[base];
+            float y = smooth != null ? smooth[1] : normals[base + 1];
+            float z = smooth != null ? smooth[2] : normals[base + 2];
             float len = (float) Math.sqrt(x * x + y * y + z * z);
             if (len > 1e-8f) {
                 normals[base] = x / len;
@@ -177,6 +184,21 @@ public class Mesh {
         normals[base] += x;
         normals[base + 1] += y;
         normals[base + 2] += z;
+    }
+
+    private void addSmoothNormal(HashMap<String, float[]> normals, float[] positions, int index, float x, float y, float z) {
+        float[] normal = normals.computeIfAbsent(positionKey(positions, index), key -> new float[3]);
+        normal[0] += x;
+        normal[1] += y;
+        normal[2] += z;
+    }
+
+    private String positionKey(float[] positions, int index) {
+        int base = index * 3;
+        int x = Math.round(positions[base] * 100000.0f);
+        int y = Math.round(positions[base + 1] * 100000.0f);
+        int z = Math.round(positions[base + 2] * 100000.0f);
+        return x + "," + y + "," + z;
     }
 
     private void rebuildTangents(SubMesh subMesh) {

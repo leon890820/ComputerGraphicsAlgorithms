@@ -8,6 +8,7 @@ public class LightMaterial extends Material {
     Texture normalTex = new Texture(1,1);
     Texture positionTex = new Texture(1,1);
     Texture depthTex = new Texture(1,1);
+    Texture ssaoTex = new Texture(1,1);
 
     public LightMaterial(String frag) {
         super(frag);
@@ -34,6 +35,11 @@ public class LightMaterial extends Material {
         return this;
     }
 
+    public LightMaterial setSSAOTex(Texture t) {
+        ssaoTex = t;
+        return this;
+    }
+
 
     @Override
     public void run(MaterialRenderData data) {
@@ -41,6 +47,7 @@ public class LightMaterial extends Material {
         setTexture("worldNormal", normalTex, 1);
         setTexture("worldPos", positionTex, 2);
         setTexture("shadowMap", depthTex, 3);
+        setTexture("ssao", ssaoTex, 4);
 
         applyLightUniforms(data);
 
@@ -67,5 +74,6 @@ public class LightMaterial extends Material {
         unbindTexture(1);
         unbindTexture(2);
         unbindTexture(3); // shadowMap
+        unbindTexture(4);
     }
 }

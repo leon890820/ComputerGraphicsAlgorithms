@@ -8,11 +8,13 @@ uniform sampler2D albedo;
 uniform sampler2D worldPos;
 uniform sampler2D worldNormal;
 uniform sampler2D shadowMap;
+uniform sampler2D ssao;
 
 uniform mat4 lightSpaceMatrix;
 
 uniform vec3 light_dir;
 uniform vec3 light_pos;
+uniform vec3 light_color;
 uniform vec3 view_pos;
 uniform float lightFar;
 
@@ -48,11 +50,19 @@ void main() {
 
   vec3 texture_color = texture(albedo, texcoord).rgb;
   vec3 worldVertex = texture(worldPos, texcoord).rgb;
-  vec3 N = texture(worldNormal, texcoord).rgb;
+  vec3 N = normalize(texture(worldNormal, texcoord).rgb);
   vec3 L = normalize(-light_dir);
+  float ambientOcclusion = texture(ssao, texcoord).r;
 
-  float shadow = ShadowCalculation(worldVertex, N, L);
-  vec3 color = texture_color * (1.0 - shadow) ;
+  float shadow = 0.0;
+  vec3 V = normalize(view_pos - worldVertex);
+  vec3 H = normalize(L + V);
+
+  vec3 ambient = texture_color * 0.5 * ambientOcclusion;
+  vec3 diffuse = texture_color * 0.7 * light_color * max(0.0, dot(N, L));
+  vec3 specular = 0.3 * light_color * pow(max(0.0, dot(N, H)), 64.0);
+
+  vec3 color = ambient + (1.0 - shadow) * (diffuse + specular);
 
   
   fragColor = vec4(color, 1.0);

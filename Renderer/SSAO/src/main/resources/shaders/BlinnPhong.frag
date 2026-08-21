@@ -7,8 +7,11 @@ uniform vec3 light_dir;
 uniform vec3 ambient_light;
 uniform vec3 light_color;
 uniform vec3 view_pos;
+uniform mat4 viewMatrix;
 
 uniform sampler2D tex;
+uniform int useTexture;
+uniform vec3 albedoColor;
 
 in vec3 worldNormal;
 in vec3 worldVertex;
@@ -20,7 +23,7 @@ layout(location = 2) out vec4 fragWorldPos;
 
 
 void main() {  
-    vec3 texture_color = texture(tex, texCoord).rgb;
+    vec3 texture_color = useTexture == 1 ? texture(tex, texCoord).rgb : albedoColor;
 
     vec3 N = normalize(worldNormal);
     vec3 L = normalize(-light_dir);
@@ -35,5 +38,6 @@ void main() {
 
     fragColor = vec4(color, 1.0);
     fragNormal = vec4(worldNormal, 1.0);
-    fragWorldPos = vec4(worldVertex, 1.0);
+    vec3 viewVertex = (viewMatrix * vec4(worldVertex, 1.0)).xyz;
+    fragWorldPos = vec4(worldVertex, -viewVertex.z);
 }

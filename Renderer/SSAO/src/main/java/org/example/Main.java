@@ -66,7 +66,7 @@ public class Main {
     }
 
     private void setup() {
-        window = new Window(WIDTH, HEIGHT, "GPU Renderer - SceneD Compute Example");
+        window = new Window(WIDTH, HEIGHT, "GPU Renderer - SSAO Factory Scene");
         window.create();
         lastFrameTime = glfwGetTime();
 
@@ -76,7 +76,7 @@ public class Main {
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
         renderer = new Renderer(WIDTH, HEIGHT);
-        setScene(SceneType.C);
+        setScene(SceneType.D);
     }
 
     private void draw() {

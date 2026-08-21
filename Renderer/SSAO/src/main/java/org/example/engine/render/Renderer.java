@@ -10,6 +10,7 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class Renderer {
     private static final int SHADOW_SIZE = 1024;
+    private static final boolean SHADOWS_ENABLED = false;
 
     private final ShadowPass shadowPass;
     private final PointShadowPass pointShadowPass;
@@ -17,6 +18,7 @@ public class Renderer {
     private final ScenePass spotScenePass;
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
+    private final SSAOPass ssaoPass;
 
 
     public Renderer(int screenWidth, int screenHeight) {
@@ -26,6 +28,7 @@ public class Renderer {
         spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
+        ssaoPass = new SSAOPass(screenWidth, screenHeight);
     }
 
     public void render(RenderContext ctx) {
@@ -41,6 +44,8 @@ public class Renderer {
 
         gBufferPass.render(ctx);
         GBuffer gBuffer = gBufferPass.getGBuffer();
+
+        ssaoPass.render(ctx, gBuffer);
 
         clearDefaultSurface(ctx);
         for (Light light : ctx.scene.getLights()) {
@@ -62,19 +67,24 @@ public class Renderer {
     private void renderLight(RenderContext ctx, GBuffer gBuffer, Light light) {
         if (light instanceof PointLight) {
             PointLight pointLight = (PointLight) light;
-            pointShadowPass.render(ctx, pointLight);
+            if (SHADOWS_ENABLED) {
+                pointShadowPass.render(ctx, pointLight);
+            }
             pointScenePass.render(
                     ctx,
                     gBuffer,
                     pointLight,
-                    pointShadowPass.getDepthBuffer()
+                    pointShadowPass.getDepthBuffer(),
+                    ssaoPass.getOcclusionTexture()
             );
             return;
         }
 
         if (light instanceof SpotLight) {
             SpotLight spotLight = (SpotLight) light;
-            shadowPass.render(ctx, spotLight);
+            if (SHADOWS_ENABLED) {
+                shadowPass.render(ctx, spotLight);
+            }
             spotScenePass.render(
                     ctx,
                     gBuffer,
@@ -86,12 +96,15 @@ public class Renderer {
 
         if (light instanceof DirectionalLight) {
             DirectionalLight directionalLight = (DirectionalLight) light;
-            shadowPass.render(ctx, directionalLight);
+            if (SHADOWS_ENABLED) {
+                shadowPass.render(ctx, directionalLight);
+            }
             directionalScenePass.render(
                     ctx,
                     gBuffer,
                     directionalLight,
-                    shadowPass.getDepthBuffer()
+                    shadowPass.getDepthBuffer(),
+                    ssaoPass.getOcclusionTexture()
             );
         }
     }

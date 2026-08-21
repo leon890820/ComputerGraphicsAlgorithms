@@ -29,8 +29,10 @@ public class GBufferPass extends RenderPass {
         gBuffer.bindFrameBuffer();
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
-        glClearColor(0.0f, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearBufferfv(GL_COLOR, 0, new float[] {0.0f, 0.0f, 0.0f, 1.0f});
+        glClearBufferfv(GL_COLOR, 1, new float[] {0.0f, 0.0f, 0.0f, 1.0f});
+        glClearBufferfv(GL_COLOR, 2, new float[] {0.0f, 0.0f, 0.0f, 0.0f});
+        glClear(GL_DEPTH_BUFFER_BIT);
         Light primaryLight = ctx.scene.getLights().isEmpty()
                 ? null
                 : ctx.scene.getLights().get(0);

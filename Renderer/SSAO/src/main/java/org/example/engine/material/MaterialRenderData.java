@@ -8,6 +8,7 @@ public class MaterialRenderData {
 
     public Matrix4 modelMatrix;
     public Matrix4 mvpMatrix;
+    public Matrix4 viewMatrix;
     public Matrix4[] boneMatrices;
 
     public Texture baseColorTexture;

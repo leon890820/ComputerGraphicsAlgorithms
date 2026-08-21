@@ -14,11 +14,16 @@ public class ScenePass extends RenderPass {
     }
 
     public void render(RenderContext ctx, GBuffer gBuffer, Light light, Texture shadowDepth) {
+        render(ctx, gBuffer, light, shadowDepth, null);
+    }
+
+    public void render(RenderContext ctx, GBuffer gBuffer, Light light, Texture shadowDepth, Texture ssaoTexture) {
         lightMaterial
                 .setAlbedoTex(gBuffer.albedo)
                 .setNormalTex(gBuffer.normal)
                 .setPositionTex(gBuffer.position)
-                .setDepthTex(shadowDepth);
+                .setDepthTex(shadowDepth)
+                .setSSAOTex(ssaoTexture);
         Light previousLight = ctx.activeLight;
         ctx.activeLight = light;
         try {

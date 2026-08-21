@@ -48,7 +48,7 @@ void main() {
     vec3 worldVertex = texture(worldPos, texcoord).rgb;
     vec3 N = texture(worldNormal, texcoord).rgb;
     vec3 L = normalize(-light_dir);
-    float shadow = ShadowCalculation(worldVertex, N, L);
+    float shadow = 0.0;
     vec3 color = texture_color * (1.0 - shadow) ;
     vec3 shadow_color = texture(shadowMap, texcoord).rgb;
 

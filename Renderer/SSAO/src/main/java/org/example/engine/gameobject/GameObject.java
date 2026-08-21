@@ -362,6 +362,7 @@ public abstract class GameObject {
 
         if (ctx != null && ctx.camera != null) {
             data.viewPosition = ctx.camera.transform.position;
+            data.viewMatrix = ctx.camera.getViewMatrix();
             data.mvpMatrix = ctx.camera.Matrix().mult(data.modelMatrix);
         }
 

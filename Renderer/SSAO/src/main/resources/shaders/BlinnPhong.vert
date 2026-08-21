@@ -32,7 +32,7 @@ void main() {
 
     gl_Position = MVP * localPos;
 
-    worldNormal = normalize(modelMatrix * localNormal).xyz;
+    worldNormal = normalize(mat3(transpose(inverse(modelMatrix))) * localNormal.xyz);
     worldVertex = worldPos.xyz;
     texCoord = aTexCoordPosition;
 }

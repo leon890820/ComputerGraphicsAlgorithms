@@ -87,6 +87,19 @@ public class AssimpAssetLoader {
             return file.getPath();
         }
 
+        if (path.startsWith("/")) {
+            String resourcePath = path.substring(1);
+            File moduleResourceFile = new File("src/main/resources", resourcePath);
+            if (moduleResourceFile.exists()) {
+                return moduleResourceFile.getPath();
+            }
+
+            File repoResourceFile = new File("Renderer/SSAO/src/main/resources", resourcePath);
+            if (repoResourceFile.exists()) {
+                return repoResourceFile.getPath();
+            }
+        }
+
         if (path.startsWith("../")) {
             File fromRepoRoot = new File(path.substring(3));
             if (fromRepoRoot.exists()) {
