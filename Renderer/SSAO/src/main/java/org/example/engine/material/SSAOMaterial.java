@@ -26,9 +26,9 @@ public class SSAOMaterial extends Material {
     private Matrix4 viewMatrix = Matrix4.Identity();
     private float noiseScaleX = 1.0f;
     private float noiseScaleY = 1.0f;
-    private float radius = 90.0f;
-    private float bias = 2.0f;
-    private float power = 1.35f;
+    private float radius = 60.0f;
+    private float bias = 0.1f;
+    private float power = 2.0f;
 
     public SSAOMaterial(String frag, String vert) {
         super(frag, vert);

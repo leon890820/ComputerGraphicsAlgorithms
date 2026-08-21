@@ -1,14 +1,14 @@
 package org.example.scenes;
 
 import org.example.engine.gameobject.MeshObject;
-import org.example.engine.light.DirectionalLight;
+import org.example.engine.light.PointLight;
 import org.example.engine.material.PhongMaterial;
 import org.example.engine.math.Vector3;
 import org.example.engine.scene.Camera;
 import org.example.engine.scene.Scene;
 
 public class SceneD implements IScene {
-    private DirectionalLight keyLight;
+    private PointLight keyLight;
 
     @Override
     public Scene load(Camera camera, int screenWidth, int screenHeight) {
@@ -34,11 +34,11 @@ public class SceneD implements IScene {
         scene.addObject(sponza);
         scene.addObject(gura);
 
-        keyLight = new DirectionalLight(
-                new Vector3(0, 1000, 1000),
-                new Vector3(-0.35f, -0.75f, -0.55f),
-                new Vector3(0.8f, 0.8f, 0.8f)
+        keyLight = new PointLight(
+                new Vector3(0, -250, 550),
+                new Vector3(1.4f, 1.4f, 1.4f)
         );
+        keyLight.setRadius(1800.0f).setNearFar(1.0f, 3000.0f);
         scene.addLight(keyLight);
 
         return scene;

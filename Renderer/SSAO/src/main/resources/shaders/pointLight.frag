@@ -7,6 +7,7 @@ uniform sampler2D albedo;
 uniform sampler2D worldPos;
 uniform sampler2D worldNormal;
 uniform sampler2D ssao;
+uniform int useSSAO;
 
 uniform samplerCube shadowCubeMap;
 
@@ -51,11 +52,11 @@ void main() {
     vec3 texture_color = texture(albedo, texcoord).rgb;
     vec3 worldVertex = texture(worldPos, texcoord).rgb;
     vec3 N = normalize(texture(worldNormal, texcoord).rgb);
-    float ambientOcclusion = texture(ssao, texcoord).r;
+    float ambientOcclusion = useSSAO == 1 ? texture(ssao, texcoord).r : 1.0;
 
     vec3 lightVec = light_pos - worldVertex;
     vec3 L = normalize(lightVec);
-    float shadow = 0.0;
+    float shadow = ShadowCalculationPoint(worldVertex, N, L);
 
     vec3 V = normalize(view_pos - worldVertex);
     vec3 H = normalize(L + V);

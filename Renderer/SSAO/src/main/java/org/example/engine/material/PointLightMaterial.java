@@ -23,7 +23,10 @@ public class PointLightMaterial extends LightMaterial{
         setTexture("worldNormal", normalTex, 1);
         setTexture("worldPos", positionTex, 2);
         setCubeTexture("shadowCubeMap", shadowCubeMap, 3);
-        setTexture("ssao", ssaoTex, 4);
+        setIntToUniform("useSSAO", useSSAO ? 1 : 0);
+        if (useSSAO) {
+            setTexture("ssao", ssaoTex, 4);
+        }
 
         applyLightUniforms(data);
     }

@@ -93,6 +93,7 @@ public class Main {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        ctx.time = a;
         renderer.render(ctx);
 
         window.swapBuffers();
@@ -139,6 +140,10 @@ public class Main {
 
             if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
                 setScene(SceneType.D);
+            }
+
+            if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+                renderer.toggleSSAO();
             }
         });
 

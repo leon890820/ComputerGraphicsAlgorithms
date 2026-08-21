@@ -9,6 +9,7 @@ uniform sampler2D worldPos;
 uniform sampler2D worldNormal;
 uniform sampler2D shadowMap;
 uniform sampler2D ssao;
+uniform int useSSAO;
 
 uniform mat4 lightSpaceMatrix;
 
@@ -36,13 +37,11 @@ float ShadowCalculation(vec3 worldVertex,vec3 N, vec3 L)
         return 0.0;
     }
 
-    float closestDepth = (texture(shadowMap, projCoords.xy).r) * lightFar;
-    vec3 fragToLight = worldVertex - light_pos;
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
 
-    float currentDepth = length(fragToLight);
-
-    float bias = max(0.15 * (1.0 - dot(N, L)), 0.15);    
-    float shadow = currentDepth - 0.15 > closestDepth ? 0.7 : 0.0;
+    float bias = max(0.004 * (1.0 - dot(N, L)), 0.0015);
+    float shadow = currentDepth - bias > closestDepth ? 0.45 : 0.0;
     return shadow;
 }
 
@@ -52,9 +51,9 @@ void main() {
   vec3 worldVertex = texture(worldPos, texcoord).rgb;
   vec3 N = normalize(texture(worldNormal, texcoord).rgb);
   vec3 L = normalize(-light_dir);
-  float ambientOcclusion = texture(ssao, texcoord).r;
+  float ambientOcclusion = useSSAO == 1 ? texture(ssao, texcoord).r : 1.0;
 
-  float shadow = 0.0;
+  float shadow = ShadowCalculation(worldVertex, N, L);
   vec3 V = normalize(view_pos - worldVertex);
   vec3 H = normalize(L + V);
 

@@ -10,6 +10,7 @@ public class RenderContext {
     public final int screenWidth;
     public final int screenHeight;
     public Light activeLight;
+    public float time;
 
     public RenderContext(Scene scene, Camera camera, int screenWidth, int screenHeight) {
         this.scene = scene;

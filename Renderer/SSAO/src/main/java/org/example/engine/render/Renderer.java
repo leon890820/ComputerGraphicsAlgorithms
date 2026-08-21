@@ -10,7 +10,7 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class Renderer {
     private static final int SHADOW_SIZE = 1024;
-    private static final boolean SHADOWS_ENABLED = false;
+    private static final boolean SHADOWS_ENABLED = true;
 
     private final ShadowPass shadowPass;
     private final PointShadowPass pointShadowPass;
@@ -19,6 +19,10 @@ public class Renderer {
     private final ScenePass directionalScenePass;
     private final PointScenePass pointScenePass;
     private final SSAOPass ssaoPass;
+    private final SSAOBlurPass ssaoBlurPass;
+    private final TriangleEdgePass triangleEdgePass;
+    private final FinalScenePass finalScenePass;
+    private boolean ssaoEnabled = true;
 
 
     public Renderer(int screenWidth, int screenHeight) {
@@ -29,6 +33,14 @@ public class Renderer {
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
         pointScenePass = new PointScenePass();
         ssaoPass = new SSAOPass(screenWidth, screenHeight);
+        ssaoBlurPass = new SSAOBlurPass(screenWidth, screenHeight);
+        triangleEdgePass = new TriangleEdgePass(screenWidth, screenHeight);
+        finalScenePass = new FinalScenePass();
+    }
+
+    public void toggleSSAO() {
+        ssaoEnabled = !ssaoEnabled;
+        System.out.println("[Renderer] SSAO " + (ssaoEnabled ? "enabled" : "disabled"));
     }
 
     public void render(RenderContext ctx) {
@@ -45,14 +57,22 @@ public class Renderer {
         gBufferPass.render(ctx);
         GBuffer gBuffer = gBufferPass.getGBuffer();
 
-        ssaoPass.render(ctx, gBuffer);
-
-        clearDefaultSurface(ctx);
-        for (Light light : ctx.scene.getLights()) {
-            renderLight(ctx, gBuffer, light);
+        if (ssaoEnabled) {
+            ssaoPass.render(ctx, gBuffer);
+            ssaoBlurPass.render(ctx, ssaoPass.getOcclusionTexture());
         }
 
-        ctx.scene.renderCustom(ctx);
+        triangleEdgePass.render(ctx);
+        Light light = ctx.scene.getLights().isEmpty() ? null : ctx.scene.getLights().get(0);
+        finalScenePass.render(
+                ctx,
+                gBuffer,
+                ssaoPass.getOcclusionTexture(),
+                ssaoBlurPass.getBlurredTexture(),
+                triangleEdgePass.getEdgeTexture(),
+                light,
+                ssaoEnabled
+        );
     }
 
     private void clearDefaultSurface(RenderContext ctx) {
@@ -75,7 +95,7 @@ public class Renderer {
                     gBuffer,
                     pointLight,
                     pointShadowPass.getDepthBuffer(),
-                    ssaoPass.getOcclusionTexture()
+                    ssaoEnabled ? ssaoBlurPass.getBlurredTexture() : null
             );
             return;
         }
@@ -104,7 +124,7 @@ public class Renderer {
                     gBuffer,
                     directionalLight,
                     shadowPass.getDepthBuffer(),
-                    ssaoPass.getOcclusionTexture()
+                    ssaoEnabled ? ssaoBlurPass.getBlurredTexture() : null
             );
         }
     }

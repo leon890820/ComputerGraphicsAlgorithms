@@ -9,6 +9,7 @@ public class LightMaterial extends Material {
     Texture positionTex = new Texture(1,1);
     Texture depthTex = new Texture(1,1);
     Texture ssaoTex = new Texture(1,1);
+    boolean useSSAO = false;
 
     public LightMaterial(String frag) {
         super(frag);
@@ -37,6 +38,7 @@ public class LightMaterial extends Material {
 
     public LightMaterial setSSAOTex(Texture t) {
         ssaoTex = t;
+        useSSAO = t != null;
         return this;
     }
 
@@ -47,7 +49,10 @@ public class LightMaterial extends Material {
         setTexture("worldNormal", normalTex, 1);
         setTexture("worldPos", positionTex, 2);
         setTexture("shadowMap", depthTex, 3);
-        setTexture("ssao", ssaoTex, 4);
+        setIntToUniform("useSSAO", useSSAO ? 1 : 0);
+        if (useSSAO) {
+            setTexture("ssao", ssaoTex, 4);
+        }
 
         applyLightUniforms(data);
 
