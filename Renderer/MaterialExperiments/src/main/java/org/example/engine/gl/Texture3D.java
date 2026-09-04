@@ -2,6 +2,7 @@ package org.example.engine.gl;
 
 import org.lwjgl.system.MemoryUtil;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -20,6 +21,19 @@ public class Texture3D {
     private boolean uploaded;
 
     public Texture3D(int width, int height, int depth, int internalFormat, int format, int type, int filter) {
+        this(width, height, depth, internalFormat, format, type, filter, null);
+    }
+
+    public Texture3D(
+            int width,
+            int height,
+            int depth,
+            int internalFormat,
+            int format,
+            int type,
+            int filter,
+            ByteBuffer pixels
+    ) {
         this.width = width;
         this.height = height;
         this.depth = depth;
@@ -38,17 +52,26 @@ public class Texture3D {
                 0,
                 format,
                 type,
-                0
+                pixels
         );
 
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, filter);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, filter);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        setWrapMode(GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_3D, 0);
 
         uploaded = true;
+    }
+
+    public Texture3D setWrapMode(int mode) {
+        if (tex == null) return this;
+
+        glBindTexture(GL_TEXTURE_3D, tex.get(0));
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, mode);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, mode);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, mode);
+        glBindTexture(GL_TEXTURE_3D, 0);
+        return this;
     }
 
     public void bind(int unit) {

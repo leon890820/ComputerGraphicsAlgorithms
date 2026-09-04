@@ -1,5 +1,6 @@
 package org.example.engine.render;
 
+import org.example.engine.debug.MaterialDebugSettings;
 import org.example.engine.light.DirectionalLight;
 import org.example.engine.light.Light;
 import org.example.engine.light.PointLight;
@@ -20,12 +21,16 @@ public class Renderer {
 
 
     public Renderer(int screenWidth, int screenHeight) {
+        this(screenWidth, screenHeight, new MaterialDebugSettings());
+    }
+
+    public Renderer(int screenWidth, int screenHeight, MaterialDebugSettings debugSettings) {
         shadowPass = new ShadowPass(SHADOW_SIZE);
         pointShadowPass = new PointShadowPass(SHADOW_SIZE);
         gBufferPass = new GBufferPass(screenWidth, screenHeight);
         spotScenePass = new ScenePass("/shaders/spotLight.frag", "/shaders/quad.vert");
         directionalScenePass = new ScenePass("/shaders/directionalLight.frag", "/shaders/quad.vert");
-        pointScenePass = new PointScenePass();
+        pointScenePass = new PointScenePass(debugSettings);
     }
 
     public void render(RenderContext ctx) {
@@ -40,6 +45,8 @@ public class Renderer {
         for (Light light : ctx.scene.getLights()) {
             renderLight(ctx, gBuffer, light);
         }
+
+        ctx.scene.renderCustom(ctx);
     }
 
     private void clearDefaultSurface(RenderContext ctx) {

@@ -20,7 +20,16 @@ public class PointShadowPass extends RenderPass {
 
     public void render(RenderContext ctx, PointLight light) {
         Matrix4[] shadowMatrices = light.getShadowMatrices();
+        boolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
+        int previousCullFace = glGetInteger(GL_CULL_FACE_MODE);
+        boolean polygonOffsetWasEnabled = glIsEnabled(GL_POLYGON_OFFSET_FILL);
+
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(2.0f, 8.0f);
+
         Light previousLight = ctx.activeLight;
         ctx.activeLight = light;
         try {
@@ -36,6 +45,14 @@ public class PointShadowPass extends RenderPass {
             }
         } finally {
             ctx.activeLight = previousLight;
+            glDisable(GL_POLYGON_OFFSET_FILL);
+            if (polygonOffsetWasEnabled) {
+                glEnable(GL_POLYGON_OFFSET_FILL);
+            }
+            glCullFace(previousCullFace);
+            if (!cullWasEnabled) {
+                glDisable(GL_CULL_FACE);
+            }
         }
         ShadowBuffer.unbind(ctx.screenWidth, ctx.screenHeight);
     }

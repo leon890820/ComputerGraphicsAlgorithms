@@ -1,6 +1,8 @@
 package org.example;
 
 import org.example.engine.core.Window;
+import org.example.engine.debug.DebugOverlay;
+import org.example.engine.debug.MaterialDebugSettings;
 import org.example.engine.math.*;
 import org.example.engine.render.*;
 import org.example.engine.scene.*;
@@ -14,10 +16,10 @@ public class Main {
     private static final int WIDTH = 1024;
     private static final int HEIGHT = 1024;
 
-    private static final float GH_MOUSE_SENSITIVITY = 0.005f;
     private static final float MOUSE_DEAD_ZONE = 2;
 
     private final boolean[] key_input = new boolean[4];
+    private final MaterialDebugSettings debugSettings = new MaterialDebugSettings();
 
     private boolean mouseInitialized = false;
 
@@ -32,6 +34,7 @@ public class Main {
     private Renderer renderer;
     private RenderContext ctx;
     private IScene currentScene;
+    private DebugOverlay debugOverlay;
 
     private float a = 0;
     private double lastFrameTime;
@@ -48,6 +51,9 @@ public class Main {
                 draw();
             }
         } finally {
+            if (debugOverlay != null) {
+                debugOverlay.dispose();
+            }
             if (scene != null) {
                 scene.clear();
             }
@@ -58,16 +64,19 @@ public class Main {
     }
 
     private void setup() {
-        window = new Window(WIDTH, HEIGHT, "Material Experiments - SceneC");
+        window = new Window(WIDTH, HEIGHT, "Material Experiments - SceneD");
         window.create();
         lastFrameTime = glfwGetTime();
 
         setupInput(window);
 
+        debugOverlay = new DebugOverlay(debugSettings);
+        debugOverlay.init(window.getHandle());
+
         main_camera = new Camera();
         main_camera.transform.setPosition(0, 1.0f, 3.0f);
 
-        renderer = new Renderer(WIDTH, HEIGHT);
+        renderer = new Renderer(WIDTH, HEIGHT, debugSettings);
         setScene();
     }
 
@@ -86,6 +95,7 @@ public class Main {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         renderer.render(ctx);
+        debugOverlay.render(ctx);
 
         window.swapBuffers();
         window.pollEvents();
@@ -113,6 +123,10 @@ public class Main {
                 key_input[3] = pressed;
             }
 
+            if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
+                debugSettings.showPanel.set(!debugSettings.showPanel.get());
+            }
+
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
                 glfwSetWindowShouldClose(handle, true);
             }
@@ -135,8 +149,10 @@ public class Main {
 
     private void move(Window window) {
         long handle = window.getHandle();
+        boolean uiCapturingMouse = debugOverlay != null && debugOverlay.wantsCaptureMouse();
+        boolean uiCapturingKeyboard = debugOverlay != null && debugOverlay.wantsCaptureKeyboard();
 
-        boolean rightMousePressed =
+        boolean rightMousePressed = !uiCapturingMouse &&
                 glfwGetMouseButton(handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
         if (rightMousePressed) {
@@ -151,8 +167,8 @@ public class Main {
                 rawDy = 0.0f;
             }
 
-            float dx = rawDx * GH_MOUSE_SENSITIVITY;
-            float dy = rawDy * GH_MOUSE_SENSITIVITY;
+            float dx = rawDx * debugSettings.cameraLookSpeed[0];
+            float dy = rawDy * debugSettings.cameraLookSpeed[0];
 
             Vector3 rot = main_camera.transform.eular;
             main_camera.setEular(rot.x + dy, rot.y + dx, 0.0f);
@@ -168,7 +184,7 @@ public class Main {
         Vector3 right =
                 camMat.transformDirection(new Vector3(1, 0, 0)).unit_vector();
 
-        float walkSpeed = currentScene.getWalkSpeed();
+        float walkSpeed = uiCapturingKeyboard ? 0.0f : debugSettings.cameraMoveSpeed[0];
 
         float wx = key_input[3] ? walkSpeed :
                 key_input[1] ? -walkSpeed : 0.0f;
@@ -188,7 +204,7 @@ public class Main {
             scene.clear();
         }
 
-        currentScene = new SceneC();
+        currentScene = new SceneD();
         scene = currentScene.load(main_camera, WIDTH, HEIGHT);
         ctx = new RenderContext(scene, main_camera, WIDTH, HEIGHT);
         a = 0.0f;
